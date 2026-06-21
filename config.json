@@ -1,0 +1,7 @@
+{
+    "paths": {
+        "stored_tickers": "./data/",
+        "results": "./results/",
+        "log_file": "./results/backtest_log.txt"
+    }
+}

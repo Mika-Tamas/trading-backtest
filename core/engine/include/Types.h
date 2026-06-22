@@ -13,6 +13,7 @@ struct Bar {
 
 struct Order {
   std::string symbol;
+  std::int64_t timestamp;
   int quantity;
   double price;
   int side;
@@ -33,4 +34,5 @@ struct Position {
   std::string symbol;
   int quantity;
   double average_entry_price;
+  std::int64_t entry_time;
 };

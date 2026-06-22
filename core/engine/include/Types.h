@@ -1,8 +1,10 @@
+#pragma once
 #include <cstdint>
 #include <iostream>
 #include <string>
 
 struct Bar {
+  std::string symbol;
   std::int64_t timestamp;
   double open;
   double high;

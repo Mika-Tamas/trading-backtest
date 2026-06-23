@@ -71,3 +71,11 @@ double Portfolio::get_equity(
 
   return total_equity;
 }
+
+const std::vector<Trade> &Portfolio::get_trade_history() const {
+  return trade_history;
+}
+const std::unordered_map<std::string, Position> &
+Portfolio::get_positions() const {
+  return current_positions;
+}

@@ -20,4 +20,6 @@ public:
   double get_cash() const;
   double get_equity(
       const std::unordered_map<std::string, double> &current_prices) const;
+  const std::vector<Trade> &get_trade_history() const;
+  const std::unordered_map<std::string, Position> &get_positions() const;
 };

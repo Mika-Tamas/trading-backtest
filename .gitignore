@@ -54,6 +54,7 @@ Makefile
 *.sln
 *.sw?
 .agents/
+.clangd
 
 # Data files (keep CSVs out of repo to avoid size limits)
 *.csv

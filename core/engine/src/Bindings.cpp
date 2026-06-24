@@ -53,7 +53,7 @@ PYBIND11_MODULE(backtest_core, m) {
       .def("get_positions", &Portfolio::get_positions);
 
   // strategy
-  py::class_<Strategy, std::shared_ptr<Strategy>>(m, "Strategy");
+  py::class_<Strategy, std::shared_ptr<Strategy>> strategy_base(m, "Strategy");
   py::class_<SMA_strategy, Strategy, std::shared_ptr<SMA_strategy>>(
       m, "SMA_strategy")
       .def(py::init<int, int>());

@@ -28,7 +28,6 @@ target_include_directories(backtest_core PRIVATE
     strategies
 )
 
-# Statically link runtime libraries for MinGW to make the module portable
 if(MINGW)
-    target_link_options(backtest_core PRIVATE "-static-libgcc" "-static-libstdc++")
+    target_link_options(backtest_core PRIVATE "-static")
 endif()

@@ -26,6 +26,16 @@ void Backtester::run(const std::vector<Bar> &historical_data) {
     equity_curve.push_back(portfolio.get_equity(current_prices));
     timestamps.push_back(bar.timestamp);
   }
+
+  // Liquidate when over
+  for (auto position : portfolio.get_positions()) {
+    int side_to_close = (position.second.quantity > 0) ? -1 : 1;
+    portfolio.execute_order({position.first, timestamps.back(),
+                             std::abs(position.second.quantity),
+                             current_prices[position.first], side_to_close});
+  }
+  equity_curve.push_back(portfolio.get_equity(current_prices));
+  timestamps.push_back(timestamps.back() + 1);
 }
 
 const Portfolio &Backtester::get_portfolio() const { return portfolio; }

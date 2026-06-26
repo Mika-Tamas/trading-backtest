@@ -14,7 +14,7 @@ from build import backtest_core
 
 class DataParser():
     def __init__(self):
-        with open("config.json", "r") as cfg:
+        with open("../config.json", "r") as cfg:
             config_data = json.load(cfg)
             self.STORED_TICKERS_PATH = config_data["paths"]["stored_tickers"]
             os.makedirs(self.STORED_TICKERS_PATH, exist_ok=True)
@@ -33,6 +33,7 @@ class DataParser():
             if pandas_df.empty:
                 raise ValueError(f"Ticker '{ticker}' is invalid or has no data for the selected period/interval.")
 
+            pandas_df.columns = pandas_df.columns.get_level_values(0)
             pandas_df = pandas_df.reset_index()
             data = pl.from_pandas(pandas_df)
 
@@ -51,7 +52,7 @@ class DataParser():
             elif isinstance(date_val, date):
                 timestamp = int(datetime.combine(date_val, datetime.min.time()).timestamp())
             else: # str
-                timestamp = int(datetime.strptime(str(date_val), "%Y-%m-%d").timestamp())
+                timestamp = int(datetime.fromisoformat(str(date_val)).timestamp())
 
             bar = backtest_core.Bar(
                 ticker,

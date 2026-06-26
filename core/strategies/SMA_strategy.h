@@ -11,6 +11,12 @@ private:
       price_histories; // for SMA
   double calculate_SMA(const std::vector<double> &prices, int index_offset,
                        int period) const;
+  int quantity_from_cash(const Portfolio &portfolio, const std::string &symbol,
+                         double price) const;
+  std::vector<Order> liquidate_ticker(const Portfolio &portfolio,
+                                      const std::string &symbol,
+                                      std::int64_t timestamp,
+                                      double price) const;
 
 public:
   SMA_strategy(int slow, int fast);

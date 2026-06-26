@@ -13,7 +13,8 @@ void Portfolio::execute_order(const Order &order) {
 
   // Case 1: New position
   if (it == current_positions.end()) {
-    Position p = {order.symbol, order.quantity, order.price, order.timestamp};
+    Position p = {order.symbol, order.quantity * order.side, order.price,
+                  order.timestamp};
     current_positions[order.symbol] = p;
   } else {
     Position &p = it->second;

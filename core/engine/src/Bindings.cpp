@@ -45,7 +45,8 @@ PYBIND11_MODULE(backtest_core, m) {
       .def("run", &Backtester::run)
       .def("get_portfolio", &Backtester::get_portfolio)
       .def("get_equity_curve", &Backtester::get_equity_curve)
-      .def("get_timestamps", &Backtester::get_timestamps);
+      .def("get_timestamps", &Backtester::get_timestamps)
+      .def("get_benchmark_curve", &Backtester::get_benchmark_curve);
   py::class_<Portfolio>(m, "Portfolio")
       .def("get_cash", &Portfolio::get_cash)
       .def("get_equity", &Portfolio::get_equity)

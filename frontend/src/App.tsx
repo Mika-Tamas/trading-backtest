@@ -6,13 +6,13 @@ import './App.css';
 
 export default function App() {
   const [ticker, setTicker] = useState<string>('AAPL');
-  const [startDate, setStartDate] = useState<string>('2020-01-01');
+  const [startDate, setStartDate] = useState<string>('2023-01-01');
   const [endDate, setEndDate] = useState<string>('2024-01-01');
   const [initialCapital, setinitialCapital] = useState<number>(10000);
 
   const [strategyName, setStrategyName] = useState<string>('SMA');
-  const [fastPeriod, setFastPeriod] = useState<number>(20);
-  const [slowPeriod, setSlowPeriod] = useState<number>(50);
+  const [fastPeriod, setFastPeriod] = useState<number>(50);
+  const [slowPeriod, setSlowPeriod] = useState<number>(100);
 
 
   const [results, setResults] = useState<BacktestResponse | null>(null);
@@ -22,15 +22,16 @@ export default function App() {
   const chartData = React.useMemo(() => {
     if (!results) return [];
 
-    return results.timestamps.map((timestamp, index) => { // "Jan 1, 20", 10000.0
+    return results.timestamps.map((timestamp, index) => {
       const dateObj = new Date(timestamp * 1000);
-      return { // return {date, equity}
+      return { // return {date, equity, benchmark}
         date: dateObj.toLocaleDateString(undefined, {
           month: 'short',
           day: 'numeric',
           year: '2-digit'
         }),
         equity: results.equity_curve[index],
+        benchmark: results.benchmark_curve[index],
       };
     });
   }, [results]);
@@ -223,14 +224,35 @@ export default function App() {
                       tickFormatter={(tick) => `$${tick.toLocaleString()}`}
                     />
                     <Tooltip
-                      formatter={(value: any) => [`$${parseFloat(value).toFixed(2)}`, 'Equity']}
+                      formatter={(value: any, name: string) => [
+                        `$${parseFloat(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+                        name
+                      ]}
+
+                      contentStyle={{
+                        backgroundColor: 'var(--code-bg)',
+                        borderColor: 'var(--border)',
+                        borderRadius: '8px',
+                        boxShadow: 'var(--shadow)'
+                      }}
                     />
 
                     <Line
+                      name="Strategy Equity"
                       type="monotone"
                       dataKey="equity"
                       stroke="var(--accent)"
                       strokeWidth={2}
+                      dot={false}
+                    />
+
+                    <Line
+                      name="Buy & Hold"
+                      type="monotone"
+                      dataKey="benchmark"
+                      stroke="#b4f2a0"
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
                       dot={false}
                     />
                   </LineChart>

@@ -14,6 +14,7 @@ private:
 
   std::vector<double> equity_curve;
   std::vector<std::int64_t> timestamps;
+  std::vector<double> benchmark_curve;
 
 public:
   Backtester(double initial_cash, std::shared_ptr<Strategy> strategy);
@@ -22,4 +23,5 @@ public:
   const Portfolio &get_portfolio() const;
   const std::vector<double> &get_equity_curve() const;
   const std::vector<std::int64_t> &get_timestamps() const;
+  const std::vector<double> &get_benchmark_curve() const;
 };

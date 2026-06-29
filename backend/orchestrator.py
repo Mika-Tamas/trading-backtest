@@ -45,7 +45,8 @@ class Orchestrator():
             "final_cash": portfolio.get_cash(),
             "timestamps": timestamps,
             "equity_curve": equity_curve,
-            "trades": trades
+            "trades": trades,
+            "benchmark_curve" : backtester.get_benchmark_curve()
         }
         
 

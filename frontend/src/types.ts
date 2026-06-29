@@ -15,4 +15,5 @@ export interface BacktestResponse {
     timestamps: number[];
     equity_curve: number[];
     trades: Trade[];
+    benchmark_curve: number[];
 }

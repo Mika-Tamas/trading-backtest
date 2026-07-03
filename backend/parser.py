@@ -1,7 +1,6 @@
-
+from cacheManager import CacheManager
 import polars as pl
 import yfinance as yf
-import json
 import os
 import sys
 from datetime import datetime, date
@@ -14,10 +13,8 @@ from build import backtest_core
 
 class DataParser():
     def __init__(self):
-        with open("../config.json", "r") as cfg:
-            config_data = json.load(cfg)
-            self.STORED_TICKERS_PATH = config_data["paths"]["stored_tickers"]
-            os.makedirs(self.STORED_TICKERS_PATH, exist_ok=True)
+        self.cache = CacheManager()
+        
 
     def load_ticker(self,ticker,start_date,end_date):
         
@@ -32,16 +29,10 @@ class DataParser():
             raise ValueError("End date cannot be in the future.")
 
 
-        file_path = self.STORED_TICKERS_PATH + ticker + ".csv"
         use_cache = False
-
-        if os.path.exists(file_path):
-            try:
-                
-                cached_df = pl.read_csv(file_path)
-                cached_df = cached_df.with_columns(pl.col("Date").cast(pl.Date))                
-                cached_start = cached_df["Date"].min()
-                cached_end = cached_df["Date"].max()
+        cached_df,cached_start,cached_end = self.cache.from_local_cache(ticker)
+        if cached_df is not None:
+            try:             
 
                 dfs_to_concat = []
 
@@ -55,6 +46,7 @@ class DataParser():
                         left_pl = pl.from_pandas(left_df)
                         left_pl = left_pl.with_columns(pl.col("Date").cast(pl.Date))
                         dfs_to_concat.append(left_pl)
+                        cached_start = start_dt
                 
                 #Present data
                 dfs_to_concat.append(cached_df)
@@ -69,14 +61,17 @@ class DataParser():
                         right_pl = pl.from_pandas(right_df)
                         right_pl = right_pl.with_columns(pl.col("Date").cast(pl.Date))
                         dfs_to_concat.append(right_pl)
+                        cached_end = end_dt
 
                 if(len(dfs_to_concat) > 1):
                     print(f"Updating cache for {ticker}...")
                     data = pl.concat(dfs_to_concat)                    
                     data = data.unique(subset=["Date"]).sort("Date")
-                    self.save_to_csv(data, file_path)
+                    self.cache.save_to_csv(ticker,data)
+                    self.cache.update_cache_metadata(ticker,start=cached_start,end=cached_end)
                 else:
                     data = cached_df
+                    self.cache.update_cache_metadata(ticker)
 
                 print(f"Loading {ticker} from local cache...")
                 data = data.filter((pl.col("Date") >= start_dt) & (pl.col("Date") <= end_dt))
@@ -84,7 +79,6 @@ class DataParser():
 
             except Exception as e:
                 use_cache = False
-                os.remove(file_path)
                 print(f"Error while handling cache: {e}\nFalling back to full download.")
 
         if not use_cache:
@@ -100,8 +94,11 @@ class DataParser():
             data = data.with_columns(pl.col("Date").cast(pl.Date)) # 2020-01-01 format
 
             print(f"Creating cache for ticker {ticker}")
-            self.save_to_csv(data,file_path)
+            self.cache.save_to_csv(ticker,data)
+            self.cache.update_cache_metadata(ticker,start=start_date, end=end_date)
 
+
+        self.cache.enforce_cache_lifecycle()
         return data
 
 
@@ -128,9 +125,10 @@ class DataParser():
 
         return bars
 
-    def save_to_csv(self, df : pl.DataFrame,file_path : str):
-        df.write_csv(file_path)
-        print(f"Data successfully saved to {file_path}")
+
+
+
+
 
 
 

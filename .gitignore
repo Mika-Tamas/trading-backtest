@@ -58,4 +58,4 @@ Makefile
 
 # Data files (keep CSVs out of repo to avoid size limits)
 *.csv
-/data/
+backend/data/

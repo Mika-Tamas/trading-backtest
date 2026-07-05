@@ -6,13 +6,13 @@ import './App.css';
 
 export default function App() {
   const [ticker, setTicker] = useState<string>('AAPL');
-  const [startDate, setStartDate] = useState<string>('2023-01-01');
-  const [endDate, setEndDate] = useState<string>('2024-01-01');
+  const [startDate, setStartDate] = useState<string>('2022-01-01');
+  const [endDate, setEndDate] = useState<string>('2023-01-01');
   const [initialCapital, setinitialCapital] = useState<number>(10000);
 
   const [strategyName, setStrategyName] = useState<string>('SMA');
-  const [fastPeriod, setFastPeriod] = useState<number>(50);
-  const [slowPeriod, setSlowPeriod] = useState<number>(100);
+  const [fastPeriod, setFastPeriod] = useState<number>(20);
+  const [slowPeriod, setSlowPeriod] = useState<number>(50);
 
 
   const [results, setResults] = useState<BacktestResponse | null>(null);
@@ -23,13 +23,8 @@ export default function App() {
     if (!results) return [];
 
     return results.timestamps.map((timestamp, index) => {
-      const dateObj = new Date(timestamp * 1000);
       return { // return {date, equity, benchmark}
-        date: dateObj.toLocaleDateString(undefined, {
-          month: 'short',
-          day: 'numeric',
-          year: '2-digit'
-        }),
+        timestamp: timestamp * 1000,
         equity: results.equity_curve[index],
         benchmark: results.benchmark_curve[index],
       };
@@ -210,29 +205,40 @@ export default function App() {
               {results ? (
                 <ResponsiveContainer width="100%" height={350}>
                   <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
 
                     <XAxis
-                      dataKey="date"
-                      stroke="var(--text)"
+                      dataKey="timestamp"
+                      stroke="var(--text-primary)"
                       tickLine={false}
+                      minTickGap={40}
+                      tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
+                      tickFormatter={(unixTime) => new Date(unixTime).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short'
+                      })}
                     />
                     <YAxis
-                      stroke="var(--text)"
+                      width={80}
+                      stroke="var(--text-primary)"
                       tickLine={false}
                       domain={['auto', 'auto']}
                       tickFormatter={(tick) => `$${tick.toLocaleString()}`}
                     />
                     <Tooltip
+                      labelFormatter={(unixTime) => new Date(unixTime).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
                       formatter={(value: any, name: string) => [
                         `$${parseFloat(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
                         name
                       ]}
-
                       contentStyle={{
-                        backgroundColor: 'var(--code-bg)',
-                        borderColor: 'var(--border)',
-                        borderRadius: '8px',
+                        backgroundColor: 'var(--bg-input)',
+                        borderColor: 'var(--border-color)',
+                        borderRadius: '18px',
                         boxShadow: 'var(--shadow)'
                       }}
                     />
@@ -241,7 +247,7 @@ export default function App() {
                       name="Strategy Equity"
                       type="monotone"
                       dataKey="equity"
-                      stroke="var(--accent)"
+                      stroke="var(--text-accent)"
                       strokeWidth={2}
                       dot={false}
                     />

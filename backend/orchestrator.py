@@ -17,6 +17,7 @@ class Orchestrator():
         bars = self.parser.convert_to_bar(df, ticker)
         
         strategy_type = self.parse_strategy(strategy_name)
+        metrics = backtest_core.Metrics(0.001) # daily 0.1%
 
         int_args = [int(arg) for arg in args]
         strategy_instance = strategy_type(*int_args)
@@ -26,6 +27,8 @@ class Orchestrator():
         portfolio = backtester.get_portfolio()
         equity_curve = backtester.get_equity_curve()
         timestamps = backtester.get_timestamps()
+
+        sortino_ratio = metrics.get_sortino_ratio(equity_curve)
 
         trades = []
         for t in portfolio.get_trade_history():
@@ -46,7 +49,8 @@ class Orchestrator():
             "timestamps": timestamps,
             "equity_curve": equity_curve,
             "trades": trades,
-            "benchmark_curve" : backtester.get_benchmark_curve()
+            "benchmark_curve" : backtester.get_benchmark_curve(),
+            "sortino_ratio" : sortino_ratio
         }
         
 

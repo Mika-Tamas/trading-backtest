@@ -190,9 +190,9 @@ export default function App() {
             </div>
 
             <div className="metrics-card">
-              <h3>Sharpe ratio</h3>
+              <h3>Sortino ratio</h3>
               <p className="metrics-value">
-                {"-"} {/*placeholder*/}
+                {results ? results.sortino_ratio.toFixed(2) : "-"}
               </p>
             </div>
           </div>

@@ -20,6 +20,7 @@ pybind11_add_module(backtest_core THIN_LTO
     engine/src/Bindings.cpp
     engine/src/Portfolio.cpp
     engine/src/Backtester.cpp
+    engine/src/Metrics.cpp
     strategies/SMA_strategy.cpp
 )
 

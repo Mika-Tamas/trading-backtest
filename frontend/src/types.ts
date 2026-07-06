@@ -16,4 +16,5 @@ export interface BacktestResponse {
     equity_curve: number[];
     trades: Trade[];
     benchmark_curve: number[];
+    sortino_ratio: number;
 }

@@ -7,6 +7,7 @@
 #include "../include/Backtester.h"
 #include "../include/Portfolio.h"
 #include "../include/Types.h"
+#include "Metrics.h"
 
 namespace py = pybind11;
 
@@ -52,6 +53,10 @@ PYBIND11_MODULE(backtest_core, m) {
       .def("get_equity", &Portfolio::get_equity)
       .def("get_trade_history", &Portfolio::get_trade_history)
       .def("get_positions", &Portfolio::get_positions);
+
+  py::class_<Metrics>(m, "Metrics")
+      .def(py::init<double>())
+      .def("get_sortino_ratio", &Metrics::get_sortino_ratio);
 
   // strategy
   py::class_<Strategy, std::shared_ptr<Strategy>> strategy_base(m, "Strategy");

@@ -192,7 +192,7 @@ export default function App() {
             <div className="metrics-card">
               <h3>Sortino ratio</h3>
               <p className="metrics-value">
-                {results ? results.sortino_ratio.toFixed(2) : "-"}
+                {results?.metrics?.sortino_ratio ? results.metrics.sortino_ratio.toFixed(2) : "-"}
               </p>
             </div>
           </div>

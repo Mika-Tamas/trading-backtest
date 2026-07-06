@@ -55,8 +55,13 @@ PYBIND11_MODULE(backtest_core, m) {
       .def("get_positions", &Portfolio::get_positions);
 
   py::class_<Metrics>(m, "Metrics")
-      .def(py::init<double>())
-      .def("get_sortino_ratio", &Metrics::get_sortino_ratio);
+      .def(py::init<>())
+      .def("get_annualized_return", &Metrics::get_annualized_return)
+      .def("get_sharpe_ratio", &Metrics::get_sharpe_ratio)
+      .def("get_sortino_ratio", &Metrics::get_sortino_ratio)
+      .def("get_maximum_drawdown", &Metrics::get_maximum_drawdown)
+      .def("get_calmar_ratio", &Metrics::get_calmar_ratio)
+      .def("get_profit_factor", &Metrics::get_profit_factor);
 
   // strategy
   py::class_<Strategy, std::shared_ptr<Strategy>> strategy_base(m, "Strategy");

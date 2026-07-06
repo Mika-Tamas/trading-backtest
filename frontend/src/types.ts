@@ -9,6 +9,15 @@ export interface Trade {
     realized_pnl: number;
 }
 
+export interface BacktestMetrics {
+    annualized_return: number;
+    sharpe_ratio: number;
+    sortino_ratio: number;
+    maximum_drawdown: number;
+    calmar_ratio: number;
+    profit_ratio: number;
+}
+
 export interface BacktestResponse {
     initial_cash: number;
     final_cash: number;
@@ -16,5 +25,5 @@ export interface BacktestResponse {
     equity_curve: number[];
     trades: Trade[];
     benchmark_curve: number[];
-    sortino_ratio: number;
+    metrics: BacktestMetrics;
 }

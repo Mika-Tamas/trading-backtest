@@ -10,12 +10,14 @@ export interface Trade {
 }
 
 export interface BacktestMetrics {
+    total_return: number;
     annualized_return: number;
     sharpe_ratio: number;
     sortino_ratio: number;
     maximum_drawdown: number;
     calmar_ratio: number;
     profit_ratio: number;
+    win_rate: number;
 }
 
 export interface BacktestResponse {

@@ -164,7 +164,7 @@ export default function App() {
             <div className="metrics-card">
               <h3>Total return</h3>
               <p className="metrics-value">
-                {results ? `${(((results.final_cash - results.initial_cash) / results.initial_cash) * 100).toFixed(2)}%` : "-"}
+                {results ? `${(results.metrics.total_return).toFixed(2)}%` : "-"}
               </p>
             </div>
 
@@ -185,7 +185,7 @@ export default function App() {
             <div className="metrics-card">
               <h3>Win rate</h3>
               <p className="metrics-value">
-                {results ? `${((results.trades.filter(trade => trade.realized_pnl > 0).length / results.trades.length) * 100).toFixed(2)}%` : "-"}
+                {results ? `${(results.metrics.win_rate).toFixed(2)}%` : "-"}
               </p>
             </div>
 

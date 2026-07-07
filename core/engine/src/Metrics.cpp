@@ -4,8 +4,8 @@
 #include <cmath>
 #include <vector>
 
-Metrics::Metrics() {} // TODO: risk free rate vector
-
+Metrics::Metrics() {}
+//-------------------------PRIVATE-----------------------------
 std::vector<double>
 Metrics::equity_to_percentage_returns(const std::vector<double> &equity_curve) {
   std::vector<double> daily_returns;
@@ -70,6 +70,14 @@ double Metrics::get_downside_deviation(
   double downside_dev = std::sqrt(downside_variance);
   return downside_dev;
 }
+
+//-------------------------PUBLIC-----------------------------
+double Metrics::get_total_return(const std::vector<double> &equity_curve) {
+  double total_return =
+      (equity_curve.back() - equity_curve.front()) / equity_curve.front() * 100;
+  return total_return;
+}
+
 double Metrics::get_annualized_return(const std::vector<double> &equity_curve) {
   // CAGR
   if (equity_curve.size() < 2)
@@ -81,7 +89,7 @@ double Metrics::get_annualized_return(const std::vector<double> &equity_curve) {
 
   double cagr = std::pow(total_return, time_factor) - 1.0;
 
-  return cagr;
+  return cagr * 100;
 }
 double Metrics::get_sharpe_ratio(const std::vector<double> &equity_curve) {
   auto daily_percentage_returns = equity_to_percentage_returns(equity_curve);
@@ -144,7 +152,7 @@ double Metrics::get_calmar_ratio(const std::vector<double> &equity_curve) {
       return 0.0; // no trades executed
     }
   }
-  double calmar_ratio = annualized_return / max_dd;
+  double calmar_ratio = annualized_return / 100 / max_dd;
   return calmar_ratio;
 }
 
@@ -163,4 +171,16 @@ double Metrics::get_profit_factor(const std::vector<Trade> &trade_history) {
     return gross_profit > 0.0 ? 999.0 : 0.0; // (INFINITY)
   }
   return gross_profit / gross_loss;
+}
+
+double Metrics::get_win_rate(const std::vector<Trade> &trade_history) {
+  if (trade_history.empty())
+    return 0.0;
+  int wins = 0;
+  for (const Trade &trade : trade_history) {
+    if (trade.realized_pnl > 0.0) {
+      wins++;
+    }
+  }
+  return static_cast<double>(wins) / trade_history.size();
 }

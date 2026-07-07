@@ -19,10 +19,12 @@ private:
 
 public:
   Metrics();
+  double get_total_return(const std::vector<double> &equity_curve);
   double get_annualized_return(const std::vector<double> &equity_curve);
   double get_sharpe_ratio(const std::vector<double> &equity_curve);
   double get_sortino_ratio(const std::vector<double> &equity_curve);
   double get_maximum_drawdown(const std::vector<double> &equity_curve);
   double get_calmar_ratio(const std::vector<double> &equity_curve);
   double get_profit_factor(const std::vector<Trade> &trade_history);
+  double get_win_rate(const std::vector<Trade> &trade_history);
 };

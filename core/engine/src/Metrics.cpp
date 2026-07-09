@@ -138,7 +138,7 @@ double Metrics::get_maximum_drawdown(const std::vector<double> &equity_curve) {
     }
   }
 
-  return max_dd;
+  return max_dd * 100;
 }
 
 double Metrics::get_calmar_ratio(const std::vector<double> &equity_curve) {
@@ -152,7 +152,7 @@ double Metrics::get_calmar_ratio(const std::vector<double> &equity_curve) {
       return 0.0; // no trades executed
     }
   }
-  double calmar_ratio = annualized_return / 100 / max_dd;
+  double calmar_ratio = annualized_return / max_dd;
   return calmar_ratio;
 }
 
@@ -182,5 +182,6 @@ double Metrics::get_win_rate(const std::vector<Trade> &trade_history) {
       wins++;
     }
   }
-  return static_cast<double>(wins) / trade_history.size();
+  double win_rate = static_cast<double>(wins) / trade_history.size();
+  return win_rate * 100;
 }

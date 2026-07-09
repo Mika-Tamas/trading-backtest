@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { DollarSign, Calendar, TrendingUp, AlertCircle, Play, Activity, List } from 'lucide-react';
 import type { BacktestResponse, Trade } from './types';
+import EquityChart from './components/EquityChart/EquityChart';
+import MetricCard from './components/MetricCard/MetricCard';
+import SidebarConfig from './components/SidebarConfig/SidebarConfig';
 import './App.css';
 
 export default function App() {
   const [ticker, setTicker] = useState<string>('AAPL');
+  const [sameAsBenchmark, setSameAsBenchmark] = useState<boolean>(true);
+  const [benchmarkTicker, setBenchmarkTicker] = useState<string>('AAPL');
   const [startDate, setStartDate] = useState<string>('2022-01-01');
   const [endDate, setEndDate] = useState<string>('2023-01-01');
   const [initialCapital, setinitialCapital] = useState<number>(10000);
@@ -18,18 +22,6 @@ export default function App() {
   const [results, setResults] = useState<BacktestResponse | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const chartData = React.useMemo(() => {
-    if (!results) return [];
-
-    return results.timestamps.map((timestamp, index) => {
-      return { // return {date, equity, benchmark}
-        timestamp: timestamp * 1000,
-        equity: results.equity_curve[index],
-        benchmark: results.benchmark_curve[index],
-      };
-    });
-  }, [results]);
 
 
   const executeBacktest = async (e: React.SyntheticEvent) => {
@@ -70,6 +62,31 @@ export default function App() {
     }
   };
 
+  const renderMetricCard = (key: keyof typeof metricsRegistry) => {
+    const metric = metricsRegistry[key];
+    return (<MetricCard
+      key={key}
+      label={metric.label}
+      value={metric.value}
+      icon={metric.icon}
+    />
+    );
+  };
+
+  const metricsRegistry = {
+    total_return: { label: "Total Return", value: results ? `${results.metrics.total_return.toFixed(2)}%` : "-", icon: <TrendingUp /> },
+    final_cash: { label: "Final Capital", value: results ? `$${results.final_cash.toLocaleString()}` : "-", icon: <DollarSign /> },
+    win_rate: { label: "Win Rate", value: results ? `${results.metrics.win_rate.toFixed(2)}%` : "-", icon: <Activity /> },
+    sharpe_ratio: { label: "Sharpe Ratio", value: results ? results.metrics.sharpe_ratio.toFixed(2) : "-", icon: <Activity /> },
+    sortino_ratio: { label: "Sortino Ratio", value: results ? results.metrics.sortino_ratio.toFixed(2) : "-", icon: <Activity /> },
+    max_drawdown: { label: "Max Drawdown", value: results ? `${results.metrics.maximum_drawdown.toFixed(2)}%` : "-", icon: <AlertCircle /> },
+    annualized_return: { label: "Annualized Return", value: results ? `${results.metrics.annualized_return.toFixed(2)}%` : "-", icon: <TrendingUp /> },
+  };
+
+  const topLayout = ['total_return', 'annualized_return', 'final_cash',] as const;
+  const sideLayout = ['sharpe_ratio', 'sortino_ratio', 'win_rate', 'max_drawdown'] as const;
+
+
   return (
     <>
       <div className="container-title">
@@ -77,200 +94,42 @@ export default function App() {
       </div>
 
       <div className="container-dashboard">
-        <aside className="sidebar-config">
-          <h2>Configuration</h2>
-          <form onSubmit={executeBacktest}>
-            <div className="input-group">
-              <label htmlFor="ticker">Ticker Symbol</label>
-              <input
-                id="ticker"
-                type="text"
-                value={ticker}
-                onChange={(e) => setTicker(e.target.value.toUpperCase())}
-              />
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="startDate">Start Date</label>
-              <input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="endDate">End Date</label>
-              <input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="strategy">Strategy</label>
-              <select
-                id="strategy"
-                value={strategyName}
-                onChange={(e) => setStrategyName(e.target.value)}
-              >
-                <option value="SMA">SMA Crossover</option>
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="fastPeriod">Short Window (SMA)</label>
-              <input
-                id="fastPeriod"
-                type="number"
-                value={fastPeriod}
-                onChange={(e) => setFastPeriod(parseInt(e.target.value) || 0)}
-              />
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="slowPeriod">Long Window (SMA)</label>
-              <input
-                id="slowPeriod"
-                type="number"
-                value={slowPeriod}
-                onChange={(e) => setSlowPeriod(parseInt(e.target.value) || 0)}
-              />
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="initialCapital">Initial Capital ($)</label>
-              <input
-                id="initialCapital"
-                type="number"
-                value={initialCapital}
-                onChange={(e) => setinitialCapital(parseFloat(e.target.value) || 0)}
-              />
-            </div>
-
-            <button type="submit" className="btn-submit" disabled={loadingStatus}>
-              {loadingStatus ? 'Running...' : 'Run Backtest'}
-            </button>
-          </form>
-
-        </aside>
+        <SidebarConfig
+          ticker={ticker}
+          setTicker={setTicker}
+          sameAsBenchmark={sameAsBenchmark}
+          setSameAsBenchmark={setSameAsBenchmark}
+          benchmarkTicker={benchmarkTicker}
+          setBenchmarkTicker={setBenchmarkTicker}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
+          strategyName={strategyName}
+          setStrategyName={setStrategyName}
+          fastPeriod={fastPeriod}
+          setFastPeriod={setFastPeriod}
+          slowPeriod={slowPeriod}
+          setSlowPeriod={setSlowPeriod}
+          initialCapital={initialCapital}
+          setinitialCapital={setinitialCapital}
+          loadingStatus={loadingStatus}
+          executeBacktest={executeBacktest}
+        />
 
         <main className='main-content'>
-          <div className="metrics-grid">
-
-            <div className="metrics-card">
-              <h3>Total return</h3>
-              <p className="metrics-value">
-                {results ? `${(results.metrics.total_return).toFixed(2)}%` : "-"}
-              </p>
+          <div className="center-column">
+            <div className="metrics-grid">
+              {topLayout.map(renderMetricCard)}
             </div>
 
-            <div className="metrics-card">
-              <h3>Final Capital</h3>
-              <p className="metrics-value">
-                {results ? (
-                  <>
-                    <DollarSign size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
-                    {results.final_cash.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  </>
-                ) : (
-                  "-"
-                )}
-              </p>
-            </div>
+            {/**/}
 
-            <div className="metrics-card">
-              <h3>Win rate</h3>
-              <p className="metrics-value">
-                {results ? `${(results.metrics.win_rate).toFixed(2)}%` : "-"}
-              </p>
-            </div>
-
-            <div className="metrics-card">
-              <h3>Sortino ratio</h3>
-              <p className="metrics-value">
-                {results?.metrics?.sortino_ratio ? results.metrics.sortino_ratio.toFixed(2) : "-"}
-              </p>
-            </div>
+            <EquityChart results={results} />
           </div>
-
-          {/**/}
-
-          <div className='container-chart'>
-            <h3>Equity Curve</h3>
-            <div className='chart-box'>
-              {results ? (
-                <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-
-                    <XAxis
-                      dataKey="timestamp"
-                      stroke="var(--text-primary)"
-                      tickLine={false}
-                      minTickGap={40}
-                      tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
-                      tickFormatter={(unixTime) => new Date(unixTime).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short'
-                      })}
-                    />
-                    <YAxis
-                      width={80}
-                      stroke="var(--text-primary)"
-                      tickLine={false}
-                      domain={['auto', 'auto']}
-                      tickFormatter={(tick) => `$${tick.toLocaleString()}`}
-                    />
-                    <Tooltip
-                      labelFormatter={(unixTime) => new Date(unixTime).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                      formatter={(value: any, name: string) => [
-                        `$${parseFloat(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
-                        name
-                      ]}
-                      contentStyle={{
-                        backgroundColor: 'var(--bg-input)',
-                        borderColor: 'var(--border-color)',
-                        borderRadius: '18px',
-                        boxShadow: 'var(--shadow)'
-                      }}
-                    />
-
-                    <Line
-                      name="Strategy Equity"
-                      type="monotone"
-                      dataKey="equity"
-                      stroke="var(--text-accent)"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-
-                    <Line
-                      name="Buy & Hold"
-                      type="monotone"
-                      dataKey="benchmark"
-                      stroke="#b4f2a0"
-                      strokeWidth={1.5}
-                      strokeDasharray="4 4"
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-
-              ) : (
-                <div className='chart-placeholder'>
-                  Run a backtest to view the performance graph
-                </div>
-              )}
-            </div>
-          </div >
+          <div className="rightside-column">
+            {sideLayout.map(renderMetricCard)}
+          </div>
         </main >
       </div >
     </>

@@ -1,0 +1,41 @@
+.metricsCard {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100px;
+    max-height: 100px;
+    min-width: 150px;
+    max-width: 225px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metricsCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+.metricCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.metricCardHeader h3 {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.metricsValue {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-top: 12px;
+    margin-bottom: 0;
+}

@@ -79,12 +79,15 @@ export default function App() {
     win_rate: { label: "Win Rate", value: results ? `${results.metrics.win_rate.toFixed(2)}%` : "-", icon: <Activity /> },
     sharpe_ratio: { label: "Sharpe Ratio", value: results ? results.metrics.sharpe_ratio.toFixed(2) : "-", icon: <Activity /> },
     sortino_ratio: { label: "Sortino Ratio", value: results ? results.metrics.sortino_ratio.toFixed(2) : "-", icon: <Activity /> },
+    information_ratio: { label: "Information Ratio", value: results ? results.metrics.information_ratio.toFixed(2) : "-", icon: <Activity /> },
     max_drawdown: { label: "Max Drawdown", value: results ? `${results.metrics.maximum_drawdown.toFixed(2)}%` : "-", icon: <AlertCircle /> },
     annualized_return: { label: "Annualized Return", value: results ? `${results.metrics.annualized_return.toFixed(2)}%` : "-", icon: <TrendingUp /> },
+    alpha: { label: "Alpha", value: results ? `${results.metrics.alpha.toFixed(2)}%` : "-", icon: <TrendingUp /> },
+    beta: { label: "Beta", value: results ? results.metrics.beta.toFixed(2) : "-", icon: <Activity /> },
   };
 
-  const topLayout = ['total_return', 'annualized_return', 'final_cash',] as const;
-  const sideLayout = ['sharpe_ratio', 'sortino_ratio', 'win_rate', 'max_drawdown'] as const;
+  const topLayout = ['total_return', 'annualized_return', 'final_cash', 'alpha', 'beta'] as const;
+  const sideLayout = ['sharpe_ratio', 'sortino_ratio', 'information_ratio', 'win_rate', 'max_drawdown'] as const;
 
 
   return (

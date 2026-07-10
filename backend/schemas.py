@@ -27,6 +27,9 @@ class BacktestMetrics(BaseModel):
     calmar_ratio: float
     profit_ratio: float
     win_rate: float
+    information_ratio: float
+    beta: float
+    alpha: float
 
 class BacktestResponse(BaseModel):
     initial_cash: float

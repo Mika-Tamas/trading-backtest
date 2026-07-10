@@ -43,7 +43,10 @@ class Orchestrator():
             maximum_drawdown=metrics.get_maximum_drawdown(),
             calmar_ratio=metrics.get_calmar_ratio(),
             profit_ratio=metrics.get_profit_factor(),
-            win_rate=metrics.get_win_rate()
+            win_rate=metrics.get_win_rate(),
+            information_ratio=metrics.get_information_ratio(),
+            beta=metrics.get_beta(),
+            alpha=metrics.get_alpha()
         )
 
 

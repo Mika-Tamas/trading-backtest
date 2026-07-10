@@ -60,10 +60,13 @@ PYBIND11_MODULE(backtest_core, m) {
       .def("get_annualized_return", &Metrics::get_annualized_return)
       .def("get_sharpe_ratio", &Metrics::get_sharpe_ratio)
       .def("get_sortino_ratio", &Metrics::get_sortino_ratio)
+      .def("get_information_ratio", &Metrics::get_information_ratio)
       .def("get_maximum_drawdown", &Metrics::get_maximum_drawdown)
       .def("get_calmar_ratio", &Metrics::get_calmar_ratio)
       .def("get_profit_factor", &Metrics::get_profit_factor)
-      .def("get_win_rate", &Metrics::get_win_rate);
+      .def("get_win_rate", &Metrics::get_win_rate)
+      .def("get_beta", &Metrics::get_beta)
+      .def("get_alpha", &Metrics::get_alpha);
 
   // strategy
   py::class_<Strategy, std::shared_ptr<Strategy>> strategy_base(m, "Strategy");

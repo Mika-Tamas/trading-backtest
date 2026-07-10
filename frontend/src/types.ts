@@ -18,6 +18,9 @@ export interface BacktestMetrics {
     calmar_ratio: number;
     profit_ratio: number;
     win_rate: number;
+    information_ratio: number;
+    beta: number;
+    alpha: number;
 }
 
 export interface BacktestResponse {

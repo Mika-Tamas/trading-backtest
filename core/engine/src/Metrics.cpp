@@ -24,6 +24,7 @@ Metrics::Metrics(std::vector<double> equity_curve,
       get_average_daily_return(benchmark_daily_percentage_returns);
 
   maximum_drawdown = calculate_maximum_drawdown();
+  beta = calculate_beta();
 }
 //-------------------------PRIVATE-----------------------------
 std::vector<double>
@@ -121,6 +122,27 @@ double Metrics::calculate_maximum_drawdown() {
   return max_dd * 100;
 }
 
+double Metrics::calculate_beta() {
+  double cov_sum = 0.0;
+  double var_sum = 0.0;
+
+  for (size_t i = 0; i < daily_percentage_returns.size(); ++i) {
+    double diff_strat =
+        daily_percentage_returns[i] - average_daily_strategy_return;
+    double diff_bench =
+        benchmark_daily_percentage_returns[i] - average_daily_benchmark_return;
+
+    cov_sum += diff_strat * diff_bench;
+    var_sum += diff_bench * diff_bench;
+  }
+
+  if (var_sum == 0.0)
+    return 0.0;
+  // Size division cancels out
+  double beta = cov_sum / var_sum;
+  return beta;
+}
+
 //-------------------------PUBLIC-----------------------------
 double Metrics::get_total_return() {
   if (equity_curve.empty())
@@ -175,6 +197,21 @@ double Metrics::get_sortino_ratio() {
   return annualized_sortino;
 }
 
+double Metrics::get_information_ratio() {
+  std::vector<double> diff(daily_percentage_returns.size());
+
+  for (int i = 0; i < daily_percentage_returns.size(); ++i) {
+    diff[i] =
+        daily_percentage_returns[i] - benchmark_daily_percentage_returns[i];
+  }
+  double mean = average_daily_strategy_return - average_daily_benchmark_return;
+  double daily_tracking_error = get_standard_deviation(diff, mean);
+  double daily_IR = mean / daily_tracking_error;
+  double annualized_IR = daily_IR * std::sqrt(YEARLY_TRADING_DAYS);
+
+  return annualized_IR;
+}
+
 double Metrics::get_maximum_drawdown() { return maximum_drawdown; }
 
 double Metrics::get_calmar_ratio() {
@@ -220,4 +257,21 @@ double Metrics::get_win_rate() {
   }
   double win_rate = static_cast<double>(wins) / trade_history.size();
   return win_rate * 100;
+}
+
+double Metrics::get_beta() { return beta; }
+
+double Metrics::get_alpha() {
+  double annualized_strategy_return =
+      average_daily_strategy_return * YEARLY_TRADING_DAYS;
+  double annualized_risk_free_return =
+      average_daily_risk_free_return * YEARLY_TRADING_DAYS;
+  double annualized_benchmark_return =
+      average_daily_benchmark_return * YEARLY_TRADING_DAYS;
+
+  double alpha =
+      annualized_strategy_return -
+      (annualized_risk_free_return +
+       beta * (annualized_benchmark_return - annualized_risk_free_return));
+  return alpha;
 }

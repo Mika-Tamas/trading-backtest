@@ -4,8 +4,8 @@ import styles from './SidebarConfig.module.css';
 interface SidebarConfigProps {
     ticker: string;
     setTicker: (val: string) => void;
-    sameAsBenchmark: boolean;
-    setSameAsBenchmark: (val: boolean) => void;
+    sameAsTraded: boolean;
+    setSameAsTraded: (val: boolean) => void;
     benchmarkTicker: string;
     setBenchmarkTicker: (val: string) => void;
     startDate: string;
@@ -27,8 +27,8 @@ interface SidebarConfigProps {
 export default function SidebarConfig({
     ticker,
     setTicker,
-    sameAsBenchmark,
-    setSameAsBenchmark,
+    sameAsTraded,
+    setSameAsTraded,
     benchmarkTicker,
     setBenchmarkTicker,
     startDate,
@@ -66,16 +66,16 @@ export default function SidebarConfig({
                         <input
                             id="sameAsBenchmark"
                             type="checkbox"
-                            checked={sameAsBenchmark}
-                            onChange={(e) => setSameAsBenchmark(e.target.checked)}
+                            checked={sameAsTraded}
+                            onChange={(e) => setSameAsTraded(e.target.checked)}
                         />
-                        <label htmlFor="sameAsBenchmark">Same as Benchmark Ticker</label>
+                        <label htmlFor="sameAsBenchmark">Same as Traded Ticker</label>
                     </div>
                     <input
                         id="benchmarkTicker"
                         type="text"
-                        value={sameAsBenchmark ? ticker : benchmarkTicker}
-                        disabled={sameAsBenchmark}
+                        value={setSameAsTraded ? ticker : benchmarkTicker}
+                        disabled={sameAsTraded}
                         onChange={(e) => setBenchmarkTicker(e.target.value.toUpperCase())}
                     />
                 </div>

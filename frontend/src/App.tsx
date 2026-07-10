@@ -8,7 +8,7 @@ import './App.css';
 
 export default function App() {
   const [ticker, setTicker] = useState<string>('AAPL');
-  const [sameAsBenchmark, setSameAsBenchmark] = useState<boolean>(true);
+  const [sameAsTraded, setSameAsTraded] = useState<boolean>(true);
   const [benchmarkTicker, setBenchmarkTicker] = useState<string>('AAPL');
   const [startDate, setStartDate] = useState<string>('2022-01-01');
   const [endDate, setEndDate] = useState<string>('2023-01-01');
@@ -97,8 +97,8 @@ export default function App() {
         <SidebarConfig
           ticker={ticker}
           setTicker={setTicker}
-          sameAsBenchmark={sameAsBenchmark}
-          setSameAsBenchmark={setSameAsBenchmark}
+          sameAsTraded={sameAsTraded}
+          setSameAsTraded={setSameAsTraded}
           benchmarkTicker={benchmarkTicker}
           setBenchmarkTicker={setBenchmarkTicker}
           startDate={startDate}

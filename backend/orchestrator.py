@@ -19,7 +19,6 @@ class Orchestrator():
         bars = self.parser.convert_to_bar(df, req.ticker)
         
         strategy_type = self.parse_strategy(req.strategy_name)
-        metrics = backtest_core.Metrics()
 
         int_args = [int(arg) for arg in req.strategy_params]
         strategy_instance = strategy_type(*int_args)
@@ -28,18 +27,23 @@ class Orchestrator():
 
         portfolio = backtester.get_portfolio()
         equity_curve = backtester.get_equity_curve()
+        benchmark_curve = backtester.get_benchmark_curve()
         timestamps = backtester.get_timestamps()
         trade_history = portfolio.get_trade_history()
 
+        # Empty list for risk free rate until SOFR integration
+        risk_free_rate_curve = []
+        metrics = backtest_core.Metrics(equity_curve, trade_history, benchmark_curve, risk_free_rate_curve)
+
         metrics_struct = BacktestMetrics(
-            total_return=metrics.get_total_return(equity_curve),
-            annualized_return=metrics.get_annualized_return(equity_curve),
-            sharpe_ratio=metrics.get_sharpe_ratio(equity_curve),
-            sortino_ratio=metrics.get_sortino_ratio(equity_curve),
-            maximum_drawdown=metrics.get_maximum_drawdown(equity_curve),
-            calmar_ratio=metrics.get_calmar_ratio(equity_curve),
-            profit_ratio=metrics.get_profit_factor(trade_history),
-            win_rate=metrics.get_win_rate(trade_history)
+            total_return=metrics.get_total_return(),
+            annualized_return=metrics.get_annualized_return(),
+            sharpe_ratio=metrics.get_sharpe_ratio(),
+            sortino_ratio=metrics.get_sortino_ratio(),
+            maximum_drawdown=metrics.get_maximum_drawdown(),
+            calmar_ratio=metrics.get_calmar_ratio(),
+            profit_ratio=metrics.get_profit_factor(),
+            win_rate=metrics.get_win_rate()
         )
 
 
@@ -60,7 +64,7 @@ class Orchestrator():
             timestamps=timestamps,
             equity_curve=equity_curve,
             trades=trades_struct,
-            benchmark_curve=backtester.get_benchmark_curve(),
+            benchmark_curve=benchmark_curve,
             metrics=metrics_struct
         )
         

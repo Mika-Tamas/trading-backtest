@@ -46,8 +46,7 @@ PYBIND11_MODULE(backtest_core, m) {
       .def("run", &Backtester::run)
       .def("get_portfolio", &Backtester::get_portfolio)
       .def("get_equity_curve", &Backtester::get_equity_curve)
-      .def("get_timestamps", &Backtester::get_timestamps)
-      .def("get_benchmark_curve", &Backtester::get_benchmark_curve);
+      .def("get_timestamps", &Backtester::get_timestamps);
   py::class_<Portfolio>(m, "Portfolio")
       .def("get_cash", &Portfolio::get_cash)
       .def("get_equity", &Portfolio::get_equity)
@@ -55,7 +54,8 @@ PYBIND11_MODULE(backtest_core, m) {
       .def("get_positions", &Portfolio::get_positions);
 
   py::class_<Metrics>(m, "Metrics")
-      .def(py::init<std::vector<double>, std::vector<Trade>, std::vector<double>, std::vector<double>>())
+      .def(py::init<std::vector<double>, std::vector<Trade>,
+                    std::vector<double>, std::vector<double>>())
       .def("get_total_return", &Metrics::get_total_return)
       .def("get_annualized_return", &Metrics::get_annualized_return)
       .def("get_sharpe_ratio", &Metrics::get_sharpe_ratio)

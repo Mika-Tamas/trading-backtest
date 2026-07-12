@@ -273,5 +273,5 @@ double Metrics::get_alpha() {
       annualized_strategy_return -
       (annualized_risk_free_return +
        beta * (annualized_benchmark_return - annualized_risk_free_return));
-  return alpha;
+  return alpha * 100;
 }

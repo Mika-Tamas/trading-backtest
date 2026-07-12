@@ -56,7 +56,13 @@ export default function SidebarConfig({
                         id="ticker"
                         type="text"
                         value={ticker}
-                        onChange={(e) => setTicker(e.target.value.toUpperCase())}
+                        onChange={(e) => {
+                            const newTicker = e.target.value.toUpperCase();
+                            setTicker(newTicker);
+                            if (sameAsTraded) {
+                                setVisualComparisonTicker(newTicker);
+                            }
+                        }}
                     />
                 </div>
 
@@ -64,17 +70,23 @@ export default function SidebarConfig({
                     <label htmlFor="visualComparisonTicker">Buy & Hold Ticker</label>
                     <div className={styles.checkboxGroup}>
                         <input
-                            id="sameAsBenchmark"
+                            id="sameAsTraded"
                             type="checkbox"
                             checked={sameAsTraded}
-                            onChange={(e) => setSameAsTraded(e.target.checked)}
+                            onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                setSameAsTraded(isChecked);
+                                if (isChecked) {
+                                    setVisualComparisonTicker(ticker);
+                                }
+                            }}
                         />
-                        <label htmlFor="sameAsBenchmark">Same as Traded Ticker</label>
+                        <label htmlFor="sameAsTraded">Same as Traded Ticker</label>
                     </div>
                     <input
                         id="visualComparisonTicker"
                         type="text"
-                        value={sameAsTraded ? ticker : visualComparisonTicker}
+                        value={visualComparisonTicker}
                         disabled={sameAsTraded}
                         onChange={(e) => setVisualComparisonTicker(e.target.value.toUpperCase())}
                     />

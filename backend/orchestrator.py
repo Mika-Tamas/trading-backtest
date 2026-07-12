@@ -1,4 +1,5 @@
-from parser import DataParser
+from dataProvider import DataProvider
+from seriesFormatter import SeriesFormatter
 from schemas import BacktestRequest, BacktestMetrics, TradeResponse, BacktestResponse
 import sys
 import os
@@ -11,30 +12,40 @@ from build import backtest_core
 
 class Orchestrator():
     def __init__(self):
-        self.parser = DataParser()
+        self.parser = DataProvider()
+        self.formatter = SeriesFormatter()
 
     def execute(self,req : BacktestRequest):
         
+        #get ticker curve
         df = self.parser.load_ticker(req.ticker,req.start_date,req.end_date)
-        bars = self.parser.convert_to_bar(df, req.ticker)
+        bars = self.formatter.convert_to_bar_curve(req.ticker,df)
         
+        #init strategy
         strategy_type = self.parse_strategy(req.strategy_name)
-
         int_args = [int(arg) for arg in req.strategy_params]
         strategy_instance = strategy_type(*int_args)
+
+#---------------------------run backtest---------------------------
         backtester = backtest_core.Backtester(req.initial_cash,strategy_instance)
         backtester.run(bars)
 
         portfolio = backtester.get_portfolio()
         equity_curve = backtester.get_equity_curve()
-        benchmark_curve = backtester.get_benchmark_curve()
         timestamps = backtester.get_timestamps()
         trade_history = portfolio.get_trade_history()
+        
+        #get curves for benchmark    
+        risk_free_data = self.parser.load_ticker(req.risk_free_ticker,req.start_date,req.end_date)
+        market_data = self.parser.load_ticker(req.market_ticker,req.start_date,req.end_date)
+        comparison_data = self.parser.load_ticker(req.visual_comparison_ticker,req.start_date,req.end_date)
 
-        # Empty list for risk free rate until SOFR integration
-        risk_free_rate_curve = []
-        metrics = backtest_core.Metrics(equity_curve, trade_history, benchmark_curve, risk_free_rate_curve)
+        market_curve = self.formatter.build_normalized_curve(req.initial_cash,market_data,timestamps)
+        risk_free_curve = self.formatter.get_price_curve(risk_free_data,timestamps)
+        comparison_curve = self.formatter.build_normalized_curve(req.initial_cash,comparison_data,timestamps)
 
+#---------------------------calculate metrics, formulate response---------------------------
+        metrics = backtest_core.Metrics(equity_curve, trade_history, market_curve, risk_free_curve)
         metrics_struct = BacktestMetrics(
             total_return=metrics.get_total_return(),
             annualized_return=metrics.get_annualized_return(),
@@ -48,7 +59,6 @@ class Orchestrator():
             beta=metrics.get_beta(),
             alpha=metrics.get_alpha()
         )
-
 
         trades_struct = [TradeResponse(
             symbol=t.symbol,
@@ -67,11 +77,11 @@ class Orchestrator():
             timestamps=timestamps,
             equity_curve=equity_curve,
             trades=trades_struct,
-            benchmark_curve=benchmark_curve,
+            comparison_curve=comparison_curve,
+            market_curve=market_curve,
             metrics=metrics_struct
         )
         
-
 
     def parse_strategy(self,strategy_name):
         match(strategy_name):

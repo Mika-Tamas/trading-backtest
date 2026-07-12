@@ -1,22 +1,15 @@
 from cacheManager import CacheManager
 import polars as pl
 import yfinance as yf
-import os
-import sys
 from datetime import datetime, date
 
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.append(project_root)
-from build import backtest_core
 
-
-class DataParser():
+class DataProvider():
     def __init__(self):
         self.cache = CacheManager()
         
 
-    def load_ticker(self,ticker,start_date,end_date):
+    def load_ticker(self,ticker,start_date,end_date) -> pl.DataFrame:
         
         try:
             start_dt = datetime.fromisoformat(start_date).date()
@@ -102,28 +95,7 @@ class DataParser():
         return data
 
 
-    def convert_to_bar(self, df:pl.DataFrame, ticker:str):
-        bars = []
-        for row in df.iter_rows(named=True):
-            date_val = row["Date"]
-            if isinstance(date_val, datetime):
-                timestamp = int(date_val.timestamp())
-            elif isinstance(date_val, date):
-                timestamp = int(datetime.combine(date_val, datetime.min.time()).timestamp())
-            else: # str
-                timestamp = int(datetime.fromisoformat(str(date_val)).timestamp())
-
-            bar = backtest_core.Bar(
-                ticker,
-                timestamp,
-                float(row["Open"]),
-                float(row["High"]),
-                float(row["Low"]),
-                float(row["Close"]),
-                float(row["Volume"]))
-            bars.append(bar)
-
-        return bars
+   
 
 
 

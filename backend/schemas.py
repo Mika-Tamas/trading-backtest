@@ -2,6 +2,9 @@ from pydantic import BaseModel
 
 class BacktestRequest(BaseModel):
     ticker:str
+    risk_free_ticker: str
+    market_ticker: str
+    visual_comparison_ticker: str
     start_date:str
     end_date:str
     initial_cash:float
@@ -37,5 +40,6 @@ class BacktestResponse(BaseModel):
     timestamps: list[int]
     equity_curve: list[float]
     trades: list[TradeResponse]
-    benchmark_curve: list[float]
+    comparison_curve: list[float]
+    market_curve: list[float]
     metrics: BacktestMetrics

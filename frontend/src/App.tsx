@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DollarSign, Calendar, TrendingUp, AlertCircle, Play, Activity, List } from 'lucide-react';
-import type { BacktestResponse, Trade } from './types';
+import type { BacktestResponse, BacktestRequest } from './types';
 import EquityChart from './components/EquityChart/EquityChart';
 import MetricCard from './components/MetricCard/MetricCard';
 import SidebarConfig from './components/SidebarConfig/SidebarConfig';
@@ -9,7 +9,9 @@ import './App.css';
 export default function App() {
   const [ticker, setTicker] = useState<string>('AAPL');
   const [sameAsTraded, setSameAsTraded] = useState<boolean>(true);
-  const [benchmarkTicker, setBenchmarkTicker] = useState<string>('AAPL');
+  const [visualComparisonTicker, setVisualComparisonTicker] = useState<string>('AAPL');
+  const [riskFreeTicker, setRiskFreeTicker] = useState<string>('^IRX');
+  const [marketTicker, setMarketTicker] = useState<string>('SPY');
   const [startDate, setStartDate] = useState<string>('2022-01-01');
   const [endDate, setEndDate] = useState<string>('2023-01-01');
   const [initialCapital, setinitialCapital] = useState<number>(10000);
@@ -31,19 +33,23 @@ export default function App() {
     setErrorMessage(null);
 
     try {
+      const payload: BacktestRequest = {
+        ticker: ticker,
+        risk_free_ticker: riskFreeTicker,
+        market_ticker: marketTicker,
+        visual_comparison_ticker: visualComparisonTicker,
+        start_date: startDate,
+        end_date: endDate,
+        initial_cash: initialCapital,
+        strategy_name: strategyName,
+        strategy_params: [fastPeriod, slowPeriod]
+      };
       const response = await fetch('http://127.0.0.1:8000/backtest', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ticker: ticker,
-          start_date: startDate,
-          end_date: endDate,
-          initial_cash: initialCapital,
-          strategy_name: strategyName,
-          strategy_params: [fastPeriod, slowPeriod]
-        }),
+        body: JSON.stringify(payload),
       });
       if (!response.ok) {
         throw new Error(`Server returned status: ${response.status}`);
@@ -75,7 +81,7 @@ export default function App() {
 
   const metricsRegistry = {
     total_return: { label: "Total Return", value: results ? `${results.metrics.total_return.toFixed(2)}%` : "-", icon: <TrendingUp /> },
-    final_cash: { label: "Final Capital", value: results ? `$${results.final_cash.toLocaleString()}` : "-", icon: <DollarSign /> },
+    final_cash: { label: "Final Capital", value: results ? `$${results.final_cash.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "-", icon: <DollarSign /> },
     win_rate: { label: "Win Rate", value: results ? `${results.metrics.win_rate.toFixed(2)}%` : "-", icon: <Activity /> },
     sharpe_ratio: { label: "Sharpe Ratio", value: results ? results.metrics.sharpe_ratio.toFixed(2) : "-", icon: <Activity /> },
     sortino_ratio: { label: "Sortino Ratio", value: results ? results.metrics.sortino_ratio.toFixed(2) : "-", icon: <Activity /> },
@@ -102,8 +108,8 @@ export default function App() {
           setTicker={setTicker}
           sameAsTraded={sameAsTraded}
           setSameAsTraded={setSameAsTraded}
-          benchmarkTicker={benchmarkTicker}
-          setBenchmarkTicker={setBenchmarkTicker}
+          visualComparisonTicker={visualComparisonTicker}
+          setVisualComparisonTicker={setVisualComparisonTicker}
           startDate={startDate}
           setStartDate={setStartDate}
           endDate={endDate}

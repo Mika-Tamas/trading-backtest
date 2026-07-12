@@ -1,5 +1,5 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import type { BacktestResponse } from '../../types';
 import styles from './EquityChart.module.css';
 
@@ -15,7 +15,8 @@ export default function EquityChart({ results }: EquityChartProps) {
       return {
         timestamp: timestamp * 1000,
         equity: results.equity_curve[index],
-        benchmark: results.benchmark_curve[index],
+        comparison_curve: results.comparison_curve[index],
+        market_curve: results.market_curve[index]
       };
     });
   }, [results]);
@@ -49,6 +50,7 @@ export default function EquityChart({ results }: EquityChartProps) {
                 tickFormatter={(tick) => `$${tick.toLocaleString()}`}
               />
               <Tooltip
+                itemSorter={(item) => -item.value}
                 labelFormatter={(unixTime) =>
                   new Date(unixTime).toLocaleDateString(undefined, {
                     year: 'numeric',
@@ -67,21 +69,44 @@ export default function EquityChart({ results }: EquityChartProps) {
                   boxShadow: 'var(--shadow)',
                 }}
               />
+              <Legend
+                itemSorter={(item: any) => {
+                  const label = item.value;
+                  if (label === 'Strategy Equity') return 1;
+                  if (label === 'Buy & Hold') return 2;
+                  return 3;
+                }}
+                verticalAlign="top"
+                height={36}
+                iconType="plainline"
+                wrapperStyle={{ fontSize: "14px", color: "var(--text-secondary)" }}
+
+              />
+
               <Line
-                name="Strategy Equity"
+                name="Broad Market"
                 type="monotone"
-                dataKey="equity"
-                stroke="var(--text-accent)"
-                strokeWidth={2}
+                dataKey="market_curve"
+                stroke="rgba(255, 255, 255, 0.5)"
+                strokeWidth={0.8}
+                strokeDasharray="2 2"
                 dot={false}
               />
               <Line
                 name="Buy & Hold"
                 type="monotone"
-                dataKey="benchmark"
+                dataKey="comparison_curve"
                 stroke="#b4f2a0"
-                strokeWidth={1.5}
-                strokeDasharray="4 4"
+                strokeWidth={0.8}
+                strokeDasharray="2 2"
+                dot={false}
+              />
+              <Line
+                name="Strategy Equity"
+                type="monotone"
+                dataKey="equity"
+                stroke="var(--text-accent)"
+                strokeWidth={2.2}
                 dot={false}
               />
             </LineChart>

@@ -29,6 +29,19 @@ export interface BacktestResponse {
     timestamps: number[];
     equity_curve: number[];
     trades: Trade[];
-    benchmark_curve: number[];
+    comparison_curve: number[];
+    market_curve: number[];
     metrics: BacktestMetrics;
+}
+
+export interface BacktestRequest {
+    ticker: string;
+    risk_free_ticker: string;
+    market_ticker: string;
+    visual_comparison_ticker: string;
+    start_date: string;
+    end_date: string;
+    initial_cash: number;
+    strategy_name: string;
+    strategy_params: number[];
 }

@@ -6,8 +6,8 @@ interface SidebarConfigProps {
     setTicker: (val: string) => void;
     sameAsTraded: boolean;
     setSameAsTraded: (val: boolean) => void;
-    benchmarkTicker: string;
-    setBenchmarkTicker: (val: string) => void;
+    visualComparisonTicker: string;
+    setVisualComparisonTicker: (val: string) => void;
     startDate: string;
     setStartDate: (val: string) => void;
     endDate: string;
@@ -29,8 +29,8 @@ export default function SidebarConfig({
     setTicker,
     sameAsTraded,
     setSameAsTraded,
-    benchmarkTicker,
-    setBenchmarkTicker,
+    visualComparisonTicker,
+    setVisualComparisonTicker,
     startDate,
     setStartDate,
     endDate,
@@ -61,7 +61,7 @@ export default function SidebarConfig({
                 </div>
 
                 <div className={styles.inputGroup}>
-                    <label htmlFor="benchmarkTicker">Buy & Hold Ticker</label>
+                    <label htmlFor="visualComparisonTicker">Buy & Hold Ticker</label>
                     <div className={styles.checkboxGroup}>
                         <input
                             id="sameAsBenchmark"
@@ -72,11 +72,11 @@ export default function SidebarConfig({
                         <label htmlFor="sameAsBenchmark">Same as Traded Ticker</label>
                     </div>
                     <input
-                        id="benchmarkTicker"
+                        id="visualComparisonTicker"
                         type="text"
-                        value={setSameAsTraded ? ticker : benchmarkTicker}
+                        value={sameAsTraded ? ticker : visualComparisonTicker}
                         disabled={sameAsTraded}
-                        onChange={(e) => setBenchmarkTicker(e.target.value.toUpperCase())}
+                        onChange={(e) => setVisualComparisonTicker(e.target.value.toUpperCase())}
                     />
                 </div>
 

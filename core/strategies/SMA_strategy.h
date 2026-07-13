@@ -4,6 +4,7 @@
 
 class SMA_strategy : public Strategy {
 private:
+  std::int64_t warmup_over_timestamp;
   int slow_period;
   int fast_period;
 
@@ -19,8 +20,9 @@ private:
                                       double price) const;
 
 public:
-  SMA_strategy(int slow, int fast);
+  SMA_strategy(std::int64_t start_timestamp, int slow, int fast);
 
   std::vector<Order> on_bar(const Bar &bar,
                             const Portfolio &portfolio) override;
+  int get_warmup_days() const override;
 };

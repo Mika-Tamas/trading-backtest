@@ -3,7 +3,7 @@ from seriesFormatter import SeriesFormatter
 from schemas import BacktestRequest, BacktestMetrics, TradeResponse, BacktestResponse
 import sys
 import os
-
+from datetime import timedelta, datetime
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -14,20 +14,28 @@ class Orchestrator():
     def __init__(self):
         self.parser = DataProvider()
         self.formatter = SeriesFormatter()
+        self.BUFFER_SCALE = 1.5
 
     def execute(self,req : BacktestRequest):
-        
-        #get ticker curve
-        df = self.parser.load_ticker(req.ticker,req.start_date,req.end_date)
-        bars = self.formatter.convert_to_bar_curve(req.ticker,df)
-        
+
         #init strategy
+        warmup_over_timestamp = int(datetime.fromisoformat(req.start_date).timestamp())
         strategy_type = self.parse_strategy(req.strategy_name)
         int_args = [int(arg) for arg in req.strategy_params]
-        strategy_instance = strategy_type(*int_args)
+        strategy_instance = strategy_type(warmup_over_timestamp,*int_args)
+
+        warmup_days = strategy_instance.get_warmup_days() * self.BUFFER_SCALE
+        buffered_start_dt = datetime.fromisoformat(req.start_date) - timedelta(days=int(warmup_days))
+        buffered_start_date = buffered_start_dt.date().isoformat()
+        
+        #get ticker curve
+        df = self.parser.load_ticker(req.ticker,buffered_start_date,req.end_date)
+        bars = self.formatter.convert_to_bar_curve(req.ticker,df)
+        
+        
 
 #---------------------------run backtest---------------------------
-        backtester = backtest_core.Backtester(req.initial_cash,strategy_instance)
+        backtester = backtest_core.Backtester(req.initial_cash,strategy_instance, warmup_over_timestamp)
         backtester.run(bars)
 
         portfolio = backtester.get_portfolio()

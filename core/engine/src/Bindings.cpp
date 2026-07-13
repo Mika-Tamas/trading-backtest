@@ -42,7 +42,7 @@ PYBIND11_MODULE(backtest_core, m) {
 
   // methods
   py::class_<Backtester>(m, "Backtester")
-      .def(py::init<double, std::shared_ptr<Strategy>>())
+      .def(py::init<double, std::shared_ptr<Strategy>, std::int64_t>())
       .def("run", &Backtester::run)
       .def("get_portfolio", &Backtester::get_portfolio)
       .def("get_equity_curve", &Backtester::get_equity_curve)
@@ -72,5 +72,6 @@ PYBIND11_MODULE(backtest_core, m) {
   py::class_<Strategy, std::shared_ptr<Strategy>> strategy_base(m, "Strategy");
   py::class_<SMA_strategy, Strategy, std::shared_ptr<SMA_strategy>>(
       m, "SMA_strategy")
-      .def(py::init<int, int>());
+      .def(py::init<std::int64_t, int, int>())
+      .def("get_warmup_days", &SMA_strategy::get_warmup_days);
 }

@@ -1,24 +1,39 @@
 #include "../include/Backtester.h"
 #include <unordered_map>
 
-Backtester::Backtester(double initial_cash, std::shared_ptr<Strategy> strategy)
-    : portfolio(initial_cash), strategy(strategy) {}
+Backtester::Backtester(double initial_cash, std::shared_ptr<Strategy> strategy,
+                       std::int64_t warmup_over_timestamp)
+    : portfolio(initial_cash), strategy(strategy),
+      warmup_over_timestamp(warmup_over_timestamp) {}
 
-void Backtester::run(const std::vector<Bar> &historical_data) {
+void Backtester::run(const std::vector<Bar> &bar_curve) {
 
-  if (historical_data.empty())
+  if (bar_curve.empty())
+    return;
+
+  // warmup data
+  int index = 0;
+  while (index < bar_curve.size() &&
+         bar_curve[index].timestamp < warmup_over_timestamp) {
+    strategy->on_bar(bar_curve[index], portfolio);
+    index++;
+  }
+
+  if (index >= bar_curve.size())
     return;
 
   double initial_cash = portfolio.get_cash();
-  double first_price = historical_data[0].close;
+  double first_price = bar_curve[0].close;
 
   std::unordered_map<std::string, double> current_prices;
 
-  // starting values
   equity_curve.push_back(initial_cash);
-  timestamps.push_back(historical_data[0].timestamp - 1);
+  timestamps.push_back(bar_curve[index].timestamp - 1);
 
-  for (auto bar : historical_data) {
+  // run backtest
+  for (; index < bar_curve.size(); index++) {
+    Bar bar = bar_curve[index];
+
     current_prices[bar.symbol] = bar.close;
     auto orders = strategy->on_bar(
         bar, portfolio); // vector of liqvidation + entry || none

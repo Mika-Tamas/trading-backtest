@@ -1,7 +1,9 @@
 #include "SMA_strategy.h"
 #include <cmath>
 
-SMA_strategy::SMA_strategy(int slow, int fast) {
+SMA_strategy::SMA_strategy(std::int64_t warmup_over_timestamp, int slow,
+                           int fast)
+    : warmup_over_timestamp(warmup_over_timestamp) {
   if (slow < fast) {
     slow_period = fast;
     fast_period = slow;
@@ -15,6 +17,10 @@ std::vector<Order> SMA_strategy::on_bar(const Bar &bar,
                                         const Portfolio &portfolio) {
   std::vector<Order> orders_to_execute;
   price_histories[bar.symbol].push_back(bar.close);
+
+  if (bar.timestamp < warmup_over_timestamp) {
+    return orders_to_execute;
+  }
 
   const std::vector<double> &prices = price_histories[bar.symbol];
 
@@ -99,3 +105,5 @@ int SMA_strategy::quantity_from_cash(const Portfolio &portfolio,
 
   return std::floor(projected_cash / price);
 }
+
+int SMA_strategy::get_warmup_days() const { return slow_period; }

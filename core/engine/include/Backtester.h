@@ -15,8 +15,11 @@ private:
   std::vector<double> equity_curve;
   std::vector<std::int64_t> timestamps;
 
+  std::int64_t warmup_over_timestamp;
+
 public:
-  Backtester(double initial_cash, std::shared_ptr<Strategy> strategy);
+  Backtester(double initial_cash, std::shared_ptr<Strategy> strategy,
+             std::int64_t warmup_over_timestamp);
   void run(const std::vector<Bar> &historical_data);
 
   const Portfolio &get_portfolio() const;

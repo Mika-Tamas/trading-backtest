@@ -1,4 +1,5 @@
 #include "SMA_strategy.h"
+#include "CircularBuffer.hpp"
 #include <cmath>
 
 SMA_strategy::SMA_strategy(std::int64_t warmup_over_timestamp, int slow,
@@ -16,22 +17,26 @@ SMA_strategy::SMA_strategy(std::int64_t warmup_over_timestamp, int slow,
 std::vector<Order> SMA_strategy::on_bar(const Bar &bar,
                                         const Portfolio &portfolio) {
   std::vector<Order> orders_to_execute;
-  price_histories[bar.symbol].push_back(bar.close);
+  // multiple tickers support
+  if (ticker_states.find(bar.symbol) == ticker_states.end()) {
+    ticker_states[bar.symbol] =
+        std::make_unique<TickerHistory>(slow_period, fast_period);
+  }
+  TickerHistory &ticker_history = *ticker_states[bar.symbol];
+  ticker_history.consume_price(bar.close);
 
   if (bar.timestamp < warmup_over_timestamp) {
     return orders_to_execute;
   }
 
-  const std::vector<double> &prices = price_histories[bar.symbol];
-
-  if (prices.size() < slow_period + 1) {
+  if (ticker_history.fast_sma.get_size() < 2) {
     return orders_to_execute;
   }
 
-  double fast_sma = calculate_SMA(prices, 0, fast_period);
-  double prev_fast_sma = calculate_SMA(prices, 1, fast_period);
-  double slow_sma = calculate_SMA(prices, 0, slow_period);
-  double prev_slow_sma = calculate_SMA(prices, 1, slow_period);
+  double fast_sma = ticker_history.get_cur_fast_SMA();
+  double prev_fast_sma = ticker_history.get_prev_fast_SMA();
+  double slow_sma = ticker_history.get_cur_slow_SMA();
+  double prev_slow_sma = ticker_history.get_prev_slow_SMA();
 
   double price = bar.close;
   std::int64_t timestamp = bar.timestamp;
@@ -60,19 +65,6 @@ std::vector<Order> SMA_strategy::on_bar(const Bar &bar,
   }
 
   return orders_to_execute;
-}
-
-double SMA_strategy::calculate_SMA(const std::vector<double> &prices,
-                                   int index_offset, int period) const {
-  if (prices.size() < period + index_offset) {
-    return 0;
-  }
-  double price_total = 0;
-  for (int i = prices.size() - period - index_offset;
-       i < prices.size() - index_offset; ++i) {
-    price_total += prices[i];
-  }
-  return price_total / period;
 }
 
 std::vector<Order> SMA_strategy::liquidate_ticker(const Portfolio &portfolio,

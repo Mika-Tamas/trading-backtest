@@ -1,5 +1,11 @@
 from pydantic import BaseModel
 
+class FeeSettings(BaseModel):
+    type: str
+    rate: float
+    min: float
+    max: float
+
 class BacktestRequest(BaseModel):
     ticker:str
     risk_free_ticker: str
@@ -10,6 +16,7 @@ class BacktestRequest(BaseModel):
     initial_cash:float
     strategy_name:str
     strategy_params:list[float]
+    fee_model : FeeSettings
 
 class TradeResponse(BaseModel):
     symbol: str
@@ -20,6 +27,7 @@ class TradeResponse(BaseModel):
     quantity: float
     side: int
     realized_pnl: float
+    fee_paid: float
 
 class BacktestMetrics(BaseModel):
     total_return: float
@@ -37,9 +45,11 @@ class BacktestMetrics(BaseModel):
 class BacktestResponse(BaseModel):
     initial_cash: float
     final_cash: float
+    fees_paid: float
     timestamps: list[int]
     equity_curve: list[float]
     trades: list[TradeResponse]
     comparison_curve: list[float]
     market_curve: list[float]
     metrics: BacktestMetrics
+

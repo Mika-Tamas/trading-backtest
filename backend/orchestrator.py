@@ -1,6 +1,6 @@
 from dataProvider import DataProvider
 from seriesFormatter import SeriesFormatter
-from schemas import BacktestRequest, BacktestMetrics, TradeResponse, BacktestResponse
+from schemas import BacktestRequest, BacktestMetrics, TradeResponse, BacktestResponse, FeeSettings
 import sys
 import os
 from datetime import timedelta, datetime
@@ -31,11 +31,14 @@ class Orchestrator():
         #get ticker curve
         df = self.parser.load_ticker(req.ticker,buffered_start_date,req.end_date)
         bars = self.formatter.convert_to_bar_curve(req.ticker,df)
+
+        #init fee
+        fee_instance = self.parse_fee(req.fee_model)
         
         
 
 #---------------------------run backtest---------------------------
-        backtester = backtest_core.Backtester(req.initial_cash,strategy_instance, warmup_over_timestamp)
+        backtester = backtest_core.Backtester(req.initial_cash,strategy_instance, warmup_over_timestamp,fee_instance)
         backtester.run(bars)
 
         portfolio = backtester.get_portfolio()
@@ -65,7 +68,7 @@ class Orchestrator():
             win_rate=metrics.get_win_rate(),
             information_ratio=metrics.get_information_ratio(),
             beta=metrics.get_beta(),
-            alpha=metrics.get_alpha()
+            alpha=metrics.get_alpha(),
         )
 
         trades_struct = [TradeResponse(
@@ -76,12 +79,16 @@ class Orchestrator():
             exit_price=t.exit_price,
             quantity=t.quantity,
             side=t.side,
-            realized_pnl=t.realized_pnl
+            realized_pnl=t.realized_pnl,
+            fee_paid = t.fee_paid
         ) for t in trade_history]
+        
+        total_fees_paid = sum(t.fee_paid for t in trade_history)
 
         return BacktestResponse(
             initial_cash=req.initial_cash,
             final_cash=portfolio.get_cash(),
+            fees_paid = total_fees_paid,
             timestamps=timestamps,
             equity_curve=equity_curve,
             trades=trades_struct,
@@ -97,4 +104,14 @@ class Orchestrator():
                 return backtest_core.SMA_strategy
             case _:
                 raise ValueError(f"Unknown strategy type: {strategy_name}")
-        
+    
+    def parse_fee(self, fee_settings):
+        match(fee_settings.type):
+            case "Percentage":
+                return backtest_core.Percentage_fee(fee_settings.rate, fee_settings.min, fee_settings.max)
+            case "ShareFlat":
+                return backtest_core.Share_flat_fee(fee_settings.rate, fee_settings.min, fee_settings.max)
+            case "OrderFlat":
+                return backtest_core.Order_flat_fee(fee_settings.rate)
+            case _:
+                raise ValueError(f"Unknown fee type: {fee_settings.type}")

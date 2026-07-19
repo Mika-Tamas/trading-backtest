@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DollarSign, Calendar, TrendingUp, AlertCircle, Play, Activity, List } from 'lucide-react';
-import type { BacktestResponse, BacktestRequest } from './types';
+import type { BacktestResponse, BacktestRequest, FeeSettings } from './types';
 import EquityChart from './components/EquityChart/EquityChart';
 import MetricCard from './components/MetricCard/MetricCard';
 import SidebarConfig from './components/SidebarConfig/SidebarConfig';
@@ -20,6 +20,11 @@ export default function App() {
   const [fastPeriod, setFastPeriod] = useState<number>(20);
   const [slowPeriod, setSlowPeriod] = useState<number>(50);
 
+  const [feeType, setFeeType] = useState<string>('Percentage');
+  const [feeRate, setFeeRate] = useState<number>(0.1);
+  const [minFee, setMinFee] = useState<number>(-1.0);
+  const [maxFee, setMaxFee] = useState<number>(-1.0);
+
 
   const [results, setResults] = useState<BacktestResponse | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<boolean>(false);
@@ -33,6 +38,13 @@ export default function App() {
     setErrorMessage(null);
 
     try {
+      const fee_settings: FeeSettings = {
+        type: feeType,
+        rate: feeType === 'Percentage' ? (feeRate / 100) : feeRate,
+        min: minFee,
+        max: maxFee
+      }
+
       const payload: BacktestRequest = {
         ticker: ticker,
         risk_free_ticker: riskFreeTicker,
@@ -42,7 +54,8 @@ export default function App() {
         end_date: endDate,
         initial_cash: initialCapital,
         strategy_name: strategyName,
-        strategy_params: [fastPeriod, slowPeriod]
+        strategy_params: [fastPeriod, slowPeriod],
+        fee_model: fee_settings
       };
       const response = await fetch('http://127.0.0.1:8000/backtest', {
         method: 'POST',
@@ -82,6 +95,7 @@ export default function App() {
   const metricsRegistry = {
     total_return: { label: "Total Return", value: results ? `${results.metrics.total_return.toFixed(2)}%` : "-", icon: <TrendingUp /> },
     final_cash: { label: "Final Capital", value: results ? `$${results.final_cash.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "-", icon: <DollarSign /> },
+    fees_paid: { label: "Total Fees", value: results ? `$${results.fees_paid.toFixed(2)}` : "-", icon: <DollarSign /> },
     win_rate: { label: "Win Rate", value: results ? `${results.metrics.win_rate.toFixed(2)}%` : "-", icon: <Activity /> },
     sharpe_ratio: { label: "Sharpe Ratio", value: results ? results.metrics.sharpe_ratio.toFixed(2) : "-", icon: <Activity /> },
     sortino_ratio: { label: "Sortino Ratio", value: results ? results.metrics.sortino_ratio.toFixed(2) : "-", icon: <Activity /> },
@@ -92,7 +106,7 @@ export default function App() {
     beta: { label: "Beta", value: results ? results.metrics.beta.toFixed(2) : "-", icon: <Activity /> },
   };
 
-  const topLayout = ['total_return', 'annualized_return', 'final_cash', 'alpha', 'beta'] as const;
+  const topLayout = ['total_return', 'annualized_return', 'fees_paid', 'final_cash', 'alpha', 'beta'] as const;
   const sideLayout = ['sharpe_ratio', 'sortino_ratio', 'information_ratio', 'win_rate', 'max_drawdown'] as const;
 
 

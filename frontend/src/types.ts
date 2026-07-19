@@ -7,6 +7,7 @@ export interface Trade {
     quantity: number;
     side: number; // 1 for Long, -1 for Short
     realized_pnl: number;
+    fee_paid: number;
 }
 
 export interface BacktestMetrics {
@@ -26,6 +27,7 @@ export interface BacktestMetrics {
 export interface BacktestResponse {
     initial_cash: number;
     final_cash: number;
+    fees_paid: number;
     timestamps: number[];
     equity_curve: number[];
     trades: Trade[];
@@ -44,4 +46,12 @@ export interface BacktestRequest {
     initial_cash: number;
     strategy_name: string;
     strategy_params: number[];
+    fee_model: FeeSettings;
+}
+
+export interface FeeSettings {
+    type: string;
+    rate: number;
+    min: number;
+    max: number;
 }

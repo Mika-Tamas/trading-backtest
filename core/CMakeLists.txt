@@ -22,6 +22,9 @@ pybind11_add_module(backtest_core THIN_LTO
     engine/src/Backtester.cpp
     engine/src/Metrics.cpp
     strategies/SMA_strategy.cpp
+    fees/src/Percentage_fee.cpp
+    fees/src/Share_flat_fee.cpp
+    fees/src/Order_flat_fee.cpp
 )
 
 target_include_directories(backtest_core PRIVATE

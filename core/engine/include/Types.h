@@ -30,6 +30,7 @@ struct Trade {
   int quantity;
   int side;
   double realized_pnl;
+  double fee_paid;
 };
 
 struct Position {
@@ -37,4 +38,5 @@ struct Position {
   int quantity;
   double average_entry_price;
   std::int64_t entry_time;
+  double fee_paid;
 };

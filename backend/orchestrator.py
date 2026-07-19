@@ -49,11 +49,16 @@ class Orchestrator():
         #get curves for benchmark    
         risk_free_data = self.parser.load_ticker(req.risk_free_ticker,req.start_date,req.end_date)
         market_data = self.parser.load_ticker(req.market_ticker,req.start_date,req.end_date)
-        comparison_data = self.parser.load_ticker(req.visual_comparison_ticker,req.start_date,req.end_date)
+        if req.visual_comparison_ticker == req.ticker:
+            comparison_data = df
+        else:
+            comparison_data = self.parser.load_ticker(req.visual_comparison_ticker,req.start_date,req.end_date)
 
         market_curve = self.formatter.build_normalized_curve(req.initial_cash,market_data,timestamps)
         risk_free_curve = self.formatter.get_price_curve(risk_free_data,timestamps)
         comparison_curve = self.formatter.build_normalized_curve(req.initial_cash,comparison_data,timestamps)
+
+        
 
 #---------------------------calculate metrics, formulate response---------------------------
         metrics = backtest_core.Metrics(equity_curve, trade_history, market_curve, risk_free_curve)

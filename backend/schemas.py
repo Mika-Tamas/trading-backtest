@@ -14,6 +14,7 @@ class BacktestRequest(BaseModel):
     start_date:str
     end_date:str
     initial_cash:float
+    base_currency: str
     strategy_name:str
     strategy_params:list[float]
     fee_model : FeeSettings

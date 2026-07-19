@@ -94,9 +94,35 @@ class DataProvider():
         self.cache.enforce_cache_lifecycle()
         return data
 
+    def load_ticker_with_fx(self,ticker,start_date,end_date, currency):
+        df = self.load_ticker(ticker, start_date, end_date)
+        ticker_native_currency = self.get_ticker_currency(ticker)
+        if (ticker_native_currency != None):
+            if ticker_native_currency == currency:
+                pass
+            else:
+                exchange_rate_ticker = f"{ticker_native_currency}{currency}=X"
+                fx_df = self.load_ticker(exchange_rate_ticker,start_date,end_date)
+                fx_df = fx_df.rename({"Close": "FX_Rate"})
+                print(f"Converting {ticker} from {ticker_native_currency} to {currency}...")
 
+                df = df.join(fx_df.select(["Date","FX_Rate"]), on="Date", how="left")
+                df = df.with_columns(pl.col("FX_Rate").forward_fill().backward_fill())
+                df = df.with_columns([
+                    (pl.col("Open") * pl.col("FX_Rate")).alias("Open"),
+                    (pl.col("High") * pl.col("FX_Rate")).alias("High"),
+                    (pl.col("Low") * pl.col("FX_Rate")).alias("Low"),
+                    (pl.col("Close") * pl.col("FX_Rate")).alias("Close"),])
+                df = df.drop("FX_Rate")
+        else:
+            print(f"Warning: yfinance did not return currency for {ticker}. Skipping FX conversion...")
+
+        return df
    
-
+    def get_ticker_currency(self,ticker) -> str | None:
+        ticker_info = yf.Ticker(ticker).info
+        native_currency = ticker_info.get("currency", None)
+        return native_currency
 
 
 

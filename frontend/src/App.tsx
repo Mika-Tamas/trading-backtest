@@ -15,6 +15,7 @@ export default function App() {
   const [startDate, setStartDate] = useState<string>('2022-01-01');
   const [endDate, setEndDate] = useState<string>('2023-01-01');
   const [initialCapital, setinitialCapital] = useState<number>(10000);
+  const [baseCurrency, setBaseCurrency] = useState<string>('EUR');
 
   const [strategyName, setStrategyName] = useState<string>('SMA');
   const [fastPeriod, setFastPeriod] = useState<number>(20);
@@ -53,6 +54,7 @@ export default function App() {
         start_date: startDate,
         end_date: endDate,
         initial_cash: initialCapital,
+        base_currency: baseCurrency,
         strategy_name: strategyName,
         strategy_params: [fastPeriod, slowPeriod],
         fee_model: fee_settings

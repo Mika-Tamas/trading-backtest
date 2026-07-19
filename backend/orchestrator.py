@@ -29,7 +29,7 @@ class Orchestrator():
         buffered_start_date = buffered_start_dt.date().isoformat()
         
         #get ticker curve
-        df = self.parser.load_ticker(req.ticker,buffered_start_date,req.end_date)
+        df = self.parser.load_ticker_with_fx(req.ticker,buffered_start_date,req.end_date,req.base_currency)
         bars = self.formatter.convert_to_bar_curve(req.ticker,df)
 
         #init fee
@@ -47,12 +47,12 @@ class Orchestrator():
         trade_history = portfolio.get_trade_history()
         
         #get curves for benchmark    
-        risk_free_data = self.parser.load_ticker(req.risk_free_ticker,req.start_date,req.end_date)
-        market_data = self.parser.load_ticker(req.market_ticker,req.start_date,req.end_date)
+        risk_free_data = self.parser.load_ticker_with_fx(req.risk_free_ticker,req.start_date,req.end_date,req.base_currency)
+        market_data = self.parser.load_ticker_with_fx(req.market_ticker,req.start_date,req.end_date,req.base_currency)
         if req.visual_comparison_ticker == req.ticker:
             comparison_data = df
         else:
-            comparison_data = self.parser.load_ticker(req.visual_comparison_ticker,req.start_date,req.end_date)
+            comparison_data = self.parser.load_ticker_with_fx(req.visual_comparison_ticker,req.start_date,req.end_date,req.base_currency)
 
         market_curve = self.formatter.build_normalized_curve(req.initial_cash,market_data,timestamps)
         risk_free_curve = self.formatter.get_price_curve(risk_free_data,timestamps)

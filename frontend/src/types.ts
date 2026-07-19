@@ -44,6 +44,7 @@ export interface BacktestRequest {
     start_date: string;
     end_date: string;
     initial_cash: number;
+    base_currency: string;
     strategy_name: string;
     strategy_params: number[];
     fee_model: FeeSettings;

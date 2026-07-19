@@ -2,8 +2,9 @@
 #include <unordered_map>
 
 Backtester::Backtester(double initial_cash, std::shared_ptr<Strategy> strategy,
-                       std::int64_t warmup_over_timestamp)
-    : portfolio(initial_cash), strategy(strategy),
+                       std::int64_t warmup_over_timestamp,
+                       std::shared_ptr<FeeStructure> fee_structure)
+    : portfolio(fee_structure, initial_cash), strategy(strategy),
       warmup_over_timestamp(warmup_over_timestamp) {}
 
 void Backtester::run(const std::vector<Bar> &bar_curve) {
@@ -35,8 +36,7 @@ void Backtester::run(const std::vector<Bar> &bar_curve) {
     Bar bar = bar_curve[index];
 
     current_prices[bar.symbol] = bar.close;
-    auto orders = strategy->on_bar(
-        bar, portfolio); // vector of liqvidation + entry || none
+    auto orders = strategy->on_bar(bar, portfolio);
     for (Order order : orders) {
       portfolio.execute_order(order);
     }

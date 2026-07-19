@@ -4,6 +4,10 @@
 
 #include "../../strategies/SMA_strategy.h"
 #include "../../strategies/Strategy.h"
+#include "../../fees/FeeStructure.h"
+#include "../../fees/include/Percentage_fee.h"
+#include "../../fees/include/Share_flat_fee.h"
+#include "../../fees/include/Order_flat_fee.h"
 #include "../include/Backtester.h"
 #include "../include/Portfolio.h"
 #include "../include/Types.h"
@@ -23,12 +27,14 @@ PYBIND11_MODULE(backtest_core, m) {
       .def_readwrite("exit_price", &Trade::exit_price)
       .def_readwrite("quantity", &Trade::quantity)
       .def_readwrite("side", &Trade::side)
-      .def_readwrite("realized_pnl", &Trade::realized_pnl);
+      .def_readwrite("realized_pnl", &Trade::realized_pnl)
+      .def_readwrite("fee_paid", &Trade::fee_paid);
   py::class_<Position>(m, "Position")
       .def_readwrite("symbol", &Position::symbol)
       .def_readwrite("quantity", &Position::quantity)
       .def_readwrite("average_entry_price", &Position::average_entry_price)
-      .def_readwrite("entry_time", &Position::entry_time);
+      .def_readwrite("entry_time", &Position::entry_time)
+      .def_readwrite("fee_paid", &Position::fee_paid);
   py::class_<Bar>(m, "Bar")
       .def(py::init<std::string, std::int64_t, double, double, double, double,
                     double>())
@@ -42,7 +48,7 @@ PYBIND11_MODULE(backtest_core, m) {
 
   // methods
   py::class_<Backtester>(m, "Backtester")
-      .def(py::init<double, std::shared_ptr<Strategy>, std::int64_t>())
+      .def(py::init<double, std::shared_ptr<Strategy>, std::int64_t, std::shared_ptr<FeeStructure>>())
       .def("run", &Backtester::run)
       .def("get_portfolio", &Backtester::get_portfolio)
       .def("get_equity_curve", &Backtester::get_equity_curve)
@@ -74,4 +80,16 @@ PYBIND11_MODULE(backtest_core, m) {
       m, "SMA_strategy")
       .def(py::init<std::int64_t, int, int>())
       .def("get_warmup_days", &SMA_strategy::get_warmup_days);
+
+  // fees
+  py::class_<FeeStructure, std::shared_ptr<FeeStructure>>(m, "FeeStructure");
+
+  py::class_<Percentage_fee, FeeStructure, std::shared_ptr<Percentage_fee>>(m, "Percentage_fee")
+      .def(py::init<double, double, double>());
+      
+  py::class_<Share_flat_fee, FeeStructure, std::shared_ptr<Share_flat_fee>>(m, "Share_flat_fee")
+      .def(py::init<double, double, double>());
+      
+  py::class_<Order_flat_fee, FeeStructure, std::shared_ptr<Order_flat_fee>>(m, "Order_flat_fee")
+      .def(py::init<double>());
 }

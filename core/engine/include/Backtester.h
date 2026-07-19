@@ -19,7 +19,8 @@ private:
 
 public:
   Backtester(double initial_cash, std::shared_ptr<Strategy> strategy,
-             std::int64_t warmup_over_timestamp);
+             std::int64_t warmup_over_timestamp,
+             std::shared_ptr<FeeStructure> fee_structure);
   void run(const std::vector<Bar> &historical_data);
 
   const Portfolio &get_portfolio() const;

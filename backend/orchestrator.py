@@ -10,11 +10,12 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 from build import backtest_core
 
-class Orchestrator():
+class Orchestrator:
+    BUFFER_SCALE = 1.5
+
     def __init__(self):
-        self.parser = DataProvider()
+        self.data_provider = DataProvider()
         self.formatter = SeriesFormatter()
-        self.BUFFER_SCALE = 1.5
 
     def execute(self,req : BacktestRequest):
 
@@ -29,7 +30,7 @@ class Orchestrator():
         buffered_start_date = buffered_start_dt.date().isoformat()
         
         #get ticker curve
-        df = self.parser.load_ticker_with_fx(req.ticker,buffered_start_date,req.end_date,req.base_currency)
+        df = self.data_provider.load_ticker_with_fx(req.ticker,buffered_start_date,req.end_date,req.base_currency)
         bars = self.formatter.convert_to_bar_curve(req.ticker,df)
 
         #init fee
@@ -47,12 +48,12 @@ class Orchestrator():
         trade_history = portfolio.get_trade_history()
         
         #get curves for benchmark    
-        risk_free_data = self.parser.load_ticker_with_fx(req.risk_free_ticker,req.start_date,req.end_date,req.base_currency)
-        market_data = self.parser.load_ticker_with_fx(req.market_ticker,req.start_date,req.end_date,req.base_currency)
+        risk_free_data = self.data_provider.load_ticker_with_fx(req.risk_free_ticker,req.start_date,req.end_date,req.base_currency)
+        market_data = self.data_provider.load_ticker_with_fx(req.market_ticker,req.start_date,req.end_date,req.base_currency)
         if req.visual_comparison_ticker == req.ticker:
             comparison_data = df
         else:
-            comparison_data = self.parser.load_ticker_with_fx(req.visual_comparison_ticker,req.start_date,req.end_date,req.base_currency)
+            comparison_data = self.data_provider.load_ticker_with_fx(req.visual_comparison_ticker,req.start_date,req.end_date,req.base_currency)
 
         market_curve = self.formatter.build_normalized_curve(req.initial_cash,market_data,timestamps)
         risk_free_curve = self.formatter.get_price_curve(risk_free_data,timestamps)
@@ -69,7 +70,7 @@ class Orchestrator():
             sortino_ratio=metrics.get_sortino_ratio(),
             maximum_drawdown=metrics.get_maximum_drawdown(),
             calmar_ratio=metrics.get_calmar_ratio(),
-            profit_ratio=metrics.get_profit_factor(),
+            profit_factor=metrics.get_profit_factor(),
             win_rate=metrics.get_win_rate(),
             information_ratio=metrics.get_information_ratio(),
             beta=metrics.get_beta(),
@@ -106,17 +107,17 @@ class Orchestrator():
     def parse_strategy(self,strategy_name):
         match(strategy_name):
             case("SMA"):
-                return backtest_core.SMA_strategy
+                return backtest_core.SMAStrategy
             case _:
                 raise ValueError(f"Unknown strategy type: {strategy_name}")
     
     def parse_fee(self, fee_settings):
         match(fee_settings.type):
             case "Percentage":
-                return backtest_core.Percentage_fee(fee_settings.rate, fee_settings.min, fee_settings.max)
+                return backtest_core.PercentageFee(fee_settings.rate, fee_settings.min, fee_settings.max)
             case "ShareFlat":
-                return backtest_core.Share_flat_fee(fee_settings.rate, fee_settings.min, fee_settings.max)
+                return backtest_core.ShareFlatFee(fee_settings.rate, fee_settings.min, fee_settings.max)
             case "OrderFlat":
-                return backtest_core.Order_flat_fee(fee_settings.rate)
+                return backtest_core.OrderFlatFee(fee_settings.rate)
             case _:
                 raise ValueError(f"Unknown fee type: {fee_settings.type}")

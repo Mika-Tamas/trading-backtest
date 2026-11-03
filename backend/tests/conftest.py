@@ -22,10 +22,10 @@ class MockBar:
 
 mock_backtest_core.Bar = MockBar
 
-mock_backtest_core.SMA_strategy = MagicMock
-mock_backtest_core.Percentage_fee = MagicMock
-mock_backtest_core.Share_flat_fee = MagicMock
-mock_backtest_core.Order_flat_fee = MagicMock
+mock_backtest_core.SMAStrategy = MagicMock
+mock_backtest_core.PercentageFee = MagicMock
+mock_backtest_core.ShareFlatFee = MagicMock
+mock_backtest_core.OrderFlatFee = MagicMock
 mock_backtest_core.Backtester = MagicMock
 mock_backtest_core.Metrics = MagicMock
 

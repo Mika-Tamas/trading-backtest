@@ -19,7 +19,7 @@ interface SidebarConfigProps {
     slowPeriod: number;
     setSlowPeriod: (val: number) => void;
     initialCapital: number;
-    setinitialCapital: (val: number) => void;
+    setInitialCapital: (val: number) => void;
     loadingStatus: boolean;
     executeBacktest: (e: React.SyntheticEvent) => void;
 }
@@ -42,7 +42,7 @@ export default function SidebarConfig({
     slowPeriod,
     setSlowPeriod,
     initialCapital,
-    setinitialCapital,
+    setInitialCapital,
     loadingStatus,
     executeBacktest,
 }: SidebarConfigProps) {
@@ -149,7 +149,7 @@ export default function SidebarConfig({
                         id="initialCapital"
                         type="number"
                         value={initialCapital}
-                        onChange={(e) => setinitialCapital(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => setInitialCapital(parseFloat(e.target.value) || 0)}
                     />
                 </div>
 

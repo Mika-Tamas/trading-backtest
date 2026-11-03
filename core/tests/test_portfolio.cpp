@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 TEST(PortfolioTest, Initialization) {
-  auto fee = std::make_shared<Share_flat_fee>(0.01, 0.0, 0.0);
+  auto fee = std::make_shared<ShareFlatFee>(0.01, 0.0, 0.0);
   Portfolio p(fee, 10000.0);
 
   EXPECT_DOUBLE_EQ(p.get_cash(), 10000.0);
@@ -11,7 +11,7 @@ TEST(PortfolioTest, Initialization) {
 }
 
 TEST(PortfolioTest, ExecuteBuyOrder) {
-  auto fee = std::make_shared<Share_flat_fee>(0.0, 0.0, 0.0);
+  auto fee = std::make_shared<ShareFlatFee>(0.0, 0.0, 0.0);
   Portfolio p(fee, 10000.0);
 
   Order order{"AAPL", 1600000000, 10, 150.0, 1};
@@ -26,7 +26,7 @@ TEST(PortfolioTest, ExecuteBuyOrder) {
 }
 
 TEST(PortfolioTest, ExecuteSellOrder) {
-  auto fee = std::make_shared<Share_flat_fee>(0.0, 0.0, 0.0);
+  auto fee = std::make_shared<ShareFlatFee>(0.0, 0.0, 0.0);
   Portfolio p(fee, 10000.0);
 
   Order buy{"AAPL", 1600000000, 10, 150.0, 1};
@@ -47,7 +47,7 @@ TEST(PortfolioTest, ExecuteSellOrder) {
 }
 
 TEST(PortfolioTest, EquityCalculation) {
-  auto fee = std::make_shared<Share_flat_fee>(0.0, 0.0, 0.0);
+  auto fee = std::make_shared<ShareFlatFee>(0.0, 0.0, 0.0);
   Portfolio p(fee, 10000.0);
 
   Order buy{"AAPL", 1600000000, 10, 150.0, 1};

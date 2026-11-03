@@ -43,7 +43,7 @@ def test_run_backtest_valid():
         sortino_ratio=2.0,
         maximum_drawdown=0.05,
         calmar_ratio=2.0,
-        profit_ratio=1.5,
+        profit_factor=1.5,
         win_rate=0.6,
         information_ratio=0.5,
         beta=1.0,

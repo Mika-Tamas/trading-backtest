@@ -22,7 +22,7 @@ def main():
     print("\nBuilding C++ engine...")
     subprocess.run(["cmake", "--build", "build", "--config", "Release"])
 
-    print("\n=== Setup Complete! You can now run 'python start.py' ===")
+    print("\n=== Setup Complete! You can now run 'python run.py' ===")
 
 if __name__ == "__main__":
     main()

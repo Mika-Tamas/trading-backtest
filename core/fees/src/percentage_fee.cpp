@@ -1,9 +1,9 @@
 #include "../include/percentage_fee.h"
 
-Percentage_fee::Percentage_fee(double rate, double min_fee, double max_fee)
+PercentageFee::PercentageFee(double rate, double min_fee, double max_fee)
     : rate(rate), min_fee(min_fee), max_fee(max_fee) {}
 
-int Percentage_fee::quantity_from_cash(double cash, double price) const {
+int PercentageFee::quantity_from_cash(double cash, double price) const {
   int quantity_estimate = std::floor(cash / (price * (1.0 + rate)));
   double fee_to_pay = calculate_fee(price, quantity_estimate);
 
@@ -16,7 +16,7 @@ int Percentage_fee::quantity_from_cash(double cash, double price) const {
   return quantity_estimate;
 }
 
-double Percentage_fee::calculate_fee(double price, int quantity) const {
+double PercentageFee::calculate_fee(double price, int quantity) const {
   double fee_to_pay = price * quantity * rate;
   if (min_fee > 0 && fee_to_pay < min_fee) {
     fee_to_pay = min_fee;

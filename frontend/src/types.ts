@@ -17,7 +17,7 @@ export interface BacktestMetrics {
     sortino_ratio: number;
     maximum_drawdown: number;
     calmar_ratio: number;
-    profit_ratio: number;
+    profit_factor: number;
     win_rate: number;
     information_ratio: number;
     beta: number;

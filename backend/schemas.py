@@ -37,7 +37,7 @@ class BacktestMetrics(BaseModel):
     sortino_ratio: float
     maximum_drawdown: float
     calmar_ratio: float
-    profit_ratio: float
+    profit_factor: float
     win_rate: float
     information_ratio: float
     beta: float

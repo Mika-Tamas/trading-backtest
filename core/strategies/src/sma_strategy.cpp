@@ -3,7 +3,7 @@
 #include "../../engine/include/portfolio.h"
 #include <cmath>
 
-SMA_strategy::SMA_strategy(std::int64_t warmup_over_timestamp, int slow,
+SMAStrategy::SMAStrategy(std::int64_t warmup_over_timestamp, int slow,
                            int fast)
     : warmup_over_timestamp(warmup_over_timestamp) {
   if (slow < fast) {
@@ -15,7 +15,7 @@ SMA_strategy::SMA_strategy(std::int64_t warmup_over_timestamp, int slow,
   }
 }
 
-std::vector<Order> SMA_strategy::on_bar(const Bar &bar,
+std::vector<Order> SMAStrategy::on_bar(const Bar &bar,
                                         const Portfolio &portfolio) {
   std::vector<Order> orders_to_execute;
   // multiple tickers support
@@ -34,10 +34,10 @@ std::vector<Order> SMA_strategy::on_bar(const Bar &bar,
     return orders_to_execute;
   }
 
-  double fast_sma = ticker_history.get_cur_fast_SMA();
-  double prev_fast_sma = ticker_history.get_prev_fast_SMA();
-  double slow_sma = ticker_history.get_cur_slow_SMA();
-  double prev_slow_sma = ticker_history.get_prev_slow_SMA();
+  double fast_sma = ticker_history.get_cur_fast_sma();
+  double prev_fast_sma = ticker_history.get_prev_fast_sma();
+  double slow_sma = ticker_history.get_cur_slow_sma();
+  double prev_slow_sma = ticker_history.get_prev_slow_sma();
 
   double price = bar.close;
   std::int64_t timestamp = bar.timestamp;
@@ -62,9 +62,9 @@ std::vector<Order> SMA_strategy::on_bar(const Bar &bar,
   return orders_to_execute;
 }
 
-int SMA_strategy::get_warmup_days() const { return slow_period; }
+int SMAStrategy::get_warmup_days() const { return slow_period; }
 
-int SMA_strategy::get_unified_order_qty(const Portfolio &portfolio,
+int SMAStrategy::get_unified_order_qty(const Portfolio &portfolio,
                                         std::string &ticker, double price,
                                         int direction) const {
   int current_qty = portfolio.get_position_quantity(ticker);

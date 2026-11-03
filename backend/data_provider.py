@@ -4,7 +4,7 @@ import yfinance as yf
 from datetime import datetime, date
 
 
-class DataProvider():
+class DataProvider:
     def __init__(self):
         self.cache = CacheManager()
         

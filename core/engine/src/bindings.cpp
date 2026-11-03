@@ -2,16 +2,16 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "../../strategies/include/sma_strategy.h"
-#include "../../strategies/include/strategy.h"
 #include "../../fees/include/fee_structure.h"
+#include "../../fees/include/order_flat_fee.h"
 #include "../../fees/include/percentage_fee.h"
 #include "../../fees/include/share_flat_fee.h"
-#include "../../fees/include/order_flat_fee.h"
+#include "../../strategies/include/sma_strategy.h"
+#include "../../strategies/include/strategy.h"
 #include "../include/backtester.h"
+#include "../include/metrics.h"
 #include "../include/portfolio.h"
 #include "../include/types.h"
-#include "../include/metrics.h"
 
 namespace py = pybind11;
 
@@ -48,7 +48,8 @@ PYBIND11_MODULE(backtest_core, m) {
 
   // methods
   py::class_<Backtester>(m, "Backtester")
-      .def(py::init<double, std::shared_ptr<Strategy>, std::int64_t, std::shared_ptr<FeeStructure>>())
+      .def(py::init<double, std::shared_ptr<Strategy>, std::int64_t,
+                    std::shared_ptr<FeeStructure>>())
       .def("run", &Backtester::run)
       .def("get_portfolio", &Backtester::get_portfolio)
       .def("get_equity_curve", &Backtester::get_equity_curve)
@@ -76,20 +77,23 @@ PYBIND11_MODULE(backtest_core, m) {
 
   // strategy
   py::class_<Strategy, std::shared_ptr<Strategy>> strategy_base(m, "Strategy");
-  py::class_<SMA_strategy, Strategy, std::shared_ptr<SMA_strategy>>(
-      m, "SMA_strategy")
+  py::class_<SMAStrategy, Strategy, std::shared_ptr<SMAStrategy>>(m,
+                                                                  "SMAStrategy")
       .def(py::init<std::int64_t, int, int>())
-      .def("get_warmup_days", &SMA_strategy::get_warmup_days);
+      .def("get_warmup_days", &SMAStrategy::get_warmup_days);
 
   // fees
-  py::class_<FeeStructure, std::shared_ptr<FeeStructure>>(m, "FeeStructure");
+  py::class_<FeeStructure, std::shared_ptr<FeeStructure>> fee_base(
+      m, "FeeStructure");
+  py::class_<PercentageFee, FeeStructure, std::shared_ptr<PercentageFee>>(
+      m, "PercentageFee")
+      .def(py::init<double, double, double>());
 
-  py::class_<Percentage_fee, FeeStructure, std::shared_ptr<Percentage_fee>>(m, "Percentage_fee")
+  py::class_<ShareFlatFee, FeeStructure, std::shared_ptr<ShareFlatFee>>(
+      m, "ShareFlatFee")
       .def(py::init<double, double, double>());
-      
-  py::class_<Share_flat_fee, FeeStructure, std::shared_ptr<Share_flat_fee>>(m, "Share_flat_fee")
-      .def(py::init<double, double, double>());
-      
-  py::class_<Order_flat_fee, FeeStructure, std::shared_ptr<Order_flat_fee>>(m, "Order_flat_fee")
+
+  py::class_<OrderFlatFee, FeeStructure, std::shared_ptr<OrderFlatFee>>(
+      m, "OrderFlatFee")
       .def(py::init<double>());
 }

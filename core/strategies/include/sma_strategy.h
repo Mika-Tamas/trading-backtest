@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-class SMA_strategy : public Strategy {
+class SMAStrategy : public Strategy {
 private:
   std::int64_t warmup_over_timestamp;
   int slow_period;
@@ -46,10 +46,10 @@ private:
         slow_sma.push(slow_sum / slow_period);
       }
     }
-    double get_prev_fast_SMA() { return fast_sma.get_oldest(); }
-    double get_prev_slow_SMA() { return slow_sma.get_oldest(); }
-    double get_cur_fast_SMA() { return fast_sma.get_newest(); }
-    double get_cur_slow_SMA() { return slow_sma.get_newest(); }
+    double get_prev_fast_sma() { return fast_sma.get_oldest(); }
+    double get_prev_slow_sma() { return slow_sma.get_oldest(); }
+    double get_cur_fast_sma() { return fast_sma.get_newest(); }
+    double get_cur_slow_sma() { return slow_sma.get_newest(); }
 
   private:
     void apply_kahan(double &sum, double &comp, double to_add,
@@ -69,7 +69,7 @@ private:
   std::unordered_map<std::string, std::unique_ptr<TickerHistory>> ticker_states;
 
 public:
-  SMA_strategy(std::int64_t start_timestamp, int slow, int fast);
+  SMAStrategy(std::int64_t warmup_over_timestamp, int slow, int fast);
 
   std::vector<Order> on_bar(const Bar &bar,
                             const Portfolio &portfolio) override;

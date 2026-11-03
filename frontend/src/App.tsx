@@ -14,7 +14,7 @@ export default function App() {
   const [marketTicker, setMarketTicker] = useState<string>('SPY');
   const [startDate, setStartDate] = useState<string>('2022-01-01');
   const [endDate, setEndDate] = useState<string>('2023-01-01');
-  const [initialCapital, setinitialCapital] = useState<number>(10000);
+  const [initialCapital, setInitialCapital] = useState<number>(10000);
   const [baseCurrency, setBaseCurrency] = useState<string>('EUR');
 
   const [strategyName, setStrategyName] = useState<string>('SMA');
@@ -137,7 +137,7 @@ export default function App() {
           slowPeriod={slowPeriod}
           setSlowPeriod={setSlowPeriod}
           initialCapital={initialCapital}
-          setinitialCapital={setinitialCapital}
+          setInitialCapital={setInitialCapital}
           loadingStatus={loadingStatus}
           executeBacktest={executeBacktest}
         />

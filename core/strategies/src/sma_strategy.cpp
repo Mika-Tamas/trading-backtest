@@ -1,6 +1,6 @@
-#include "SMA_strategy.h"
-#include "CircularBuffer.hpp"
-#include "Portfolio.h"
+#include "../include/sma_strategy.h"
+#include "../../engine/include/circular_buffer.hpp"
+#include "../../engine/include/portfolio.h"
 #include <cmath>
 
 SMA_strategy::SMA_strategy(std::int64_t warmup_over_timestamp, int slow,

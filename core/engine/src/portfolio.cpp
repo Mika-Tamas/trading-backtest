@@ -1,4 +1,4 @@
-#include "../include/Portfolio.h"
+#include "../include/portfolio.h"
 #include <memory>
 
 Portfolio::Portfolio(std::shared_ptr<FeeStructure> fee_structure,

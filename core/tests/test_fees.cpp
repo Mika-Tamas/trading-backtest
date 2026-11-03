@@ -1,6 +1,6 @@
-#include "../../fees/include/Order_flat_fee.h"
-#include "../../fees/include/Percentage_fee.h"
-#include "../../fees/include/Share_flat_fee.h"
+#include "order_flat_fee.h"
+#include "percentage_fee.h"
+#include "share_flat_fee.h"
 #include <gtest/gtest.h>
 
 TEST(PercentageFeeTest, CalculatePercentageFee) {

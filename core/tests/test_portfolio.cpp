@@ -1,5 +1,5 @@
-#include "../../fees/include/Share_flat_fee.h"
-#include "Portfolio.h"
+#include "share_flat_fee.h"
+#include "portfolio.h"
 #include <gtest/gtest.h>
 
 TEST(PortfolioTest, Initialization) {

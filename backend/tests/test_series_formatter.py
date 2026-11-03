@@ -1,7 +1,7 @@
 import pytest
 import polars as pl
 from datetime import datetime, date, timezone
-from seriesFormatter import SeriesFormatter
+from series_formatter import SeriesFormatter
 
 @pytest.fixture
 def formatter():

@@ -1,5 +1,5 @@
-from dataProvider import DataProvider
-from seriesFormatter import SeriesFormatter
+from data_provider import DataProvider
+from series_formatter import SeriesFormatter
 from schemas import BacktestRequest, BacktestMetrics, TradeResponse, BacktestResponse, FeeSettings
 import sys
 import os

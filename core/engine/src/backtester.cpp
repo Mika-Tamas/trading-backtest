@@ -1,4 +1,4 @@
-#include "../include/Backtester.h"
+#include "../include/backtester.h"
 #include <unordered_map>
 
 Backtester::Backtester(double initial_cash, std::shared_ptr<Strategy> strategy,

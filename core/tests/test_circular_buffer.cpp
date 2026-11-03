@@ -1,4 +1,4 @@
-#include "CircularBuffer.hpp"
+#include "circular_buffer.hpp"
 #include <gtest/gtest.h>
 
 TEST(CircularBufferTest, Initialization) {

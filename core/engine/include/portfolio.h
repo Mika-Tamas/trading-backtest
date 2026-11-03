@@ -1,12 +1,12 @@
 #pragma once
-#include "Types.h"
+#include "types.h"
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "../../fees/FeeStructure.h "
+#include "../../fees/include/fee_structure.h"
 
 class Portfolio {
 private:

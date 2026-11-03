@@ -2,16 +2,16 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "../../strategies/SMA_strategy.h"
-#include "../../strategies/Strategy.h"
-#include "../../fees/FeeStructure.h"
-#include "../../fees/include/Percentage_fee.h"
-#include "../../fees/include/Share_flat_fee.h"
-#include "../../fees/include/Order_flat_fee.h"
-#include "../include/Backtester.h"
-#include "../include/Portfolio.h"
-#include "../include/Types.h"
-#include "Metrics.h"
+#include "../../strategies/include/sma_strategy.h"
+#include "../../strategies/include/strategy.h"
+#include "../../fees/include/fee_structure.h"
+#include "../../fees/include/percentage_fee.h"
+#include "../../fees/include/share_flat_fee.h"
+#include "../../fees/include/order_flat_fee.h"
+#include "../include/backtester.h"
+#include "../include/portfolio.h"
+#include "../include/types.h"
+#include "../include/metrics.h"
 
 namespace py = pybind11;
 

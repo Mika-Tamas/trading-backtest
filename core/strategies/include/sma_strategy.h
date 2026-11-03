@@ -1,6 +1,6 @@
 #pragma once
-#include "../include/CircularBuffer.hpp"
-#include "Strategy.h"
+#include "../../engine/include/circular_buffer.hpp"
+#include "strategy.h"
 #include <memory>
 #include <unordered_map>
 #include <vector>

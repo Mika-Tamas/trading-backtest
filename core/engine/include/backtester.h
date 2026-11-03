@@ -1,7 +1,7 @@
 #pragma once
-#include "../../strategies/Strategy.h"
-#include "Portfolio.h"
-#include "Types.h"
+#include "../../strategies/include/strategy.h"
+#include "portfolio.h"
+#include "types.h"
 #include <cstdint>
 #include <memory>
 #include <unordered_map>

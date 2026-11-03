@@ -1,4 +1,4 @@
-#include "../include/Percentage_fee.h"
+#include "../include/percentage_fee.h"
 
 Percentage_fee::Percentage_fee(double rate, double min_fee, double max_fee)
     : rate(rate), min_fee(min_fee), max_fee(max_fee) {}

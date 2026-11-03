@@ -3,11 +3,11 @@ from unittest.mock import patch, MagicMock
 import polars as pl
 import pandas as pd
 from datetime import date
-from dataProvider import DataProvider
+from data_provider import DataProvider
 
 @pytest.fixture
 def data_provider():
-    with patch('dataProvider.CacheManager'):
+    with patch('data_provider.CacheManager'):
         dp = DataProvider()
         return dp
 

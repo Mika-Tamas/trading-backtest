@@ -1,15 +1,13 @@
 #pragma once
 
-#include "../FeeStructure.h"
+#include "fee_structure.h"
 
-class Percentage_fee : public FeeStructure {
+class Order_flat_fee : public FeeStructure {
 private:
   double rate = 0.0;
-  double min_fee = -1.0;
-  double max_fee = -1.0;
 
 public:
-  Percentage_fee(double rate, double min_fee, double max_fee);
+  Order_flat_fee(double rate);
   int quantity_from_cash(double cash, double price) const override;
   double calculate_fee(double price, int quantity) const override;
 };

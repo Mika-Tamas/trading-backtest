@@ -1,6 +1,6 @@
 #pragma once
-#include "../engine/include/Portfolio.h"
-#include "../engine/include/Types.h"
+#include "../../engine/include/portfolio.h"
+#include "../../engine/include/types.h"
 #include <vector>
 
 class Strategy {

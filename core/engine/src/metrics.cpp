@@ -1,5 +1,5 @@
-#include "../include/Metrics.h"
-#include "../include/Types.h"
+#include "../include/metrics.h"
+#include "../include/types.h"
 #include <algorithm>
 #include <cmath>
 #include <vector>

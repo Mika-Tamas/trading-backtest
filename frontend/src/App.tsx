@@ -1,30 +1,52 @@
 import React, { useState } from 'react';
-import { DollarSign, Calendar, TrendingUp, AlertCircle, Play, Activity, List } from 'lucide-react';
-import type { BacktestResponse, BacktestRequest, FeeSettings } from './types';
+import { DollarSign, Euro, PoundSterling, JapaneseYen, Banknote, TrendingUp, AlertCircle, Activity } from 'lucide-react';
+import type { BacktestResponse, BacktestRequest, FeeType, StrategyType } from './types';
+import { formatCurrency } from './utils/currency';
+import { buildFeeSettings, validateFeeSettings } from './utils/fee';
+import { buildStrategyParams, getDefaultStrategyParams, validateStrategyParams } from './utils/strategy';
 import EquityChart from './components/EquityChart/EquityChart';
 import MetricCard from './components/MetricCard/MetricCard';
 import SidebarConfig from './components/SidebarConfig/SidebarConfig';
 import './App.css';
 
+function getCurrencyIcon(currency: string) {
+  switch (currency) {
+    case 'USD':
+    case 'CAD':
+    case 'AUD':
+      return <DollarSign />;
+    case 'EUR':
+      return <Euro />;
+    case 'GBP':
+      return <PoundSterling />;
+    case 'JPY':
+      return <JapaneseYen />;
+    default:
+      return <Banknote />;
+  }
+}
+
 export default function App() {
   const [ticker, setTicker] = useState<string>('AAPL');
   const [sameAsTraded, setSameAsTraded] = useState<boolean>(true);
   const [visualComparisonTicker, setVisualComparisonTicker] = useState<string>('AAPL');
-  const [riskFreeTicker, setRiskFreeTicker] = useState<string>('^IRX');
-  const [marketTicker, setMarketTicker] = useState<string>('SPY');
+  const [riskFreeTicker] = useState<string>('^IRX');
+  const [marketTicker] = useState<string>('SPY');
   const [startDate, setStartDate] = useState<string>('2022-01-01');
   const [endDate, setEndDate] = useState<string>('2023-01-01');
   const [initialCapital, setInitialCapital] = useState<number>(10000);
   const [baseCurrency, setBaseCurrency] = useState<string>('EUR');
+  const [resultCurrency, setResultCurrency] = useState<string>('EUR');
 
-  const [strategyName, setStrategyName] = useState<string>('SMA');
-  const [fastPeriod, setFastPeriod] = useState<number>(20);
-  const [slowPeriod, setSlowPeriod] = useState<number>(50);
+  const [strategyName, setStrategyName] = useState<StrategyType>('SMA');
+  const [strategyParams, setStrategyParams] = useState<number[]>(() =>
+    getDefaultStrategyParams('SMA')
+  );
 
-  const [feeType, setFeeType] = useState<string>('Percentage');
+  const [feeType, setFeeType] = useState<FeeType>('Percentage');
   const [feeRate, setFeeRate] = useState<number>(0.1);
-  const [minFee, setMinFee] = useState<number>(-1.0);
-  const [maxFee, setMaxFee] = useState<number>(-1.0);
+  const [minFee, setMinFee] = useState<number | null>(null);
+  const [maxFee, setMaxFee] = useState<number | null>(null);
 
 
   const [results, setResults] = useState<BacktestResponse | null>(null);
@@ -35,17 +57,19 @@ export default function App() {
   const executeBacktest = async (e: React.SyntheticEvent) => {
     e.preventDefault();
 
+    const validationError =
+      validateStrategyParams(strategyName, strategyParams) ??
+      validateFeeSettings(feeType, feeRate, minFee, maxFee);
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+
     setLoadingStatus(true);
     setErrorMessage(null);
 
     try {
-      const fee_settings: FeeSettings = {
-        type: feeType,
-        rate: feeType === 'Percentage' ? (feeRate / 100) : feeRate,
-        min: minFee,
-        max: maxFee
-      }
-
+      const requestCurrency = baseCurrency;
       const payload: BacktestRequest = {
         ticker: ticker,
         risk_free_ticker: riskFreeTicker,
@@ -54,10 +78,10 @@ export default function App() {
         start_date: startDate,
         end_date: endDate,
         initial_cash: initialCapital,
-        base_currency: baseCurrency,
+        base_currency: requestCurrency,
         strategy_name: strategyName,
-        strategy_params: [fastPeriod, slowPeriod],
-        fee_model: fee_settings
+        strategy_params: buildStrategyParams(strategyName, strategyParams),
+        fee_model: buildFeeSettings(feeType, feeRate, minFee, maxFee),
       };
       const response = await fetch('http://127.0.0.1:8000/backtest', {
         method: 'POST',
@@ -72,11 +96,13 @@ export default function App() {
 
       const data: BacktestResponse = await response.json();
       setResults(data);
+      setResultCurrency(requestCurrency);
       console.log("Backtest executed successfully.")
 
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to connect to backend.');
-      console.error(errorMessage);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to connect to backend.';
+      setErrorMessage(message);
+      console.error(err);
     } finally {
       setLoadingStatus(false);
 
@@ -94,10 +120,12 @@ export default function App() {
     );
   };
 
+  const currencyIcon = getCurrencyIcon(results ? resultCurrency : baseCurrency);
+
   const metricsRegistry = {
     total_return: { label: "Total Return", value: results ? `${results.metrics.total_return.toFixed(2)}%` : "-", icon: <TrendingUp /> },
-    final_cash: { label: "Final Capital", value: results ? `$${results.final_cash.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "-", icon: <DollarSign /> },
-    fees_paid: { label: "Total Fees", value: results ? `$${results.fees_paid.toFixed(2)}` : "-", icon: <DollarSign /> },
+    final_cash: { label: "Final Capital", value: results ? formatCurrency(results.final_cash, resultCurrency, { maximumFractionDigits: 0 }) : "-", icon: currencyIcon },
+    fees_paid: { label: "Total Fees", value: results ? formatCurrency(results.fees_paid, resultCurrency, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-", icon: currencyIcon },
     win_rate: { label: "Win Rate", value: results ? `${results.metrics.win_rate.toFixed(2)}%` : "-", icon: <Activity /> },
     sharpe_ratio: { label: "Sharpe Ratio", value: results ? results.metrics.sharpe_ratio.toFixed(2) : "-", icon: <Activity /> },
     sortino_ratio: { label: "Sortino Ratio", value: results ? results.metrics.sortino_ratio.toFixed(2) : "-", icon: <Activity /> },
@@ -132,25 +160,40 @@ export default function App() {
           setEndDate={setEndDate}
           strategyName={strategyName}
           setStrategyName={setStrategyName}
-          fastPeriod={fastPeriod}
-          setFastPeriod={setFastPeriod}
-          slowPeriod={slowPeriod}
-          setSlowPeriod={setSlowPeriod}
+          strategyParams={strategyParams}
+          setStrategyParams={setStrategyParams}
           initialCapital={initialCapital}
           setInitialCapital={setInitialCapital}
+          baseCurrency={baseCurrency}
+          setBaseCurrency={setBaseCurrency}
+          feeType={feeType}
+          setFeeType={setFeeType}
+          feeRate={feeRate}
+          setFeeRate={setFeeRate}
+          minFee={minFee}
+          setMinFee={setMinFee}
+          maxFee={maxFee}
+          setMaxFee={setMaxFee}
           loadingStatus={loadingStatus}
           executeBacktest={executeBacktest}
         />
 
         <main className='main-content'>
           <div className="center-column">
+            {errorMessage && (
+              <div className="error-banner" role="alert">
+                <AlertCircle size={18} />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             <div className="metrics-grid">
               {topLayout.map(renderMetricCard)}
             </div>
 
             {/**/}
 
-            <EquityChart results={results} />
+            <EquityChart results={results} currency={resultCurrency} />
           </div>
           <div className="rightside-column">
             {sideLayout.map(renderMetricCard)}

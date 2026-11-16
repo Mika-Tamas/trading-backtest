@@ -21,6 +21,8 @@
 
 .inputGroup input,
 .inputGroup select {
+    width: 100%;
+    box-sizing: border-box;
     background-color: var(--bg-input);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
@@ -28,6 +30,16 @@
     padding: 12px;
     font-size: 0.95rem;
     outline: none;
+}
+
+.rowGroup {
+    display: flex;
+    gap: 10px;
+}
+
+.rowGroup .inputGroup {
+    flex: 1;
+    min-width: 0;
 }
 
 .inputGroup input:focus,

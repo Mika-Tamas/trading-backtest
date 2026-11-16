@@ -1,13 +1,15 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import type { BacktestResponse } from '../../types';
+import { formatCurrency } from '../../utils/currency';
 import styles from './EquityChart.module.css';
 
 interface EquityChartProps {
   results: BacktestResponse | null;
+  currency: string;
 }
 
-export default function EquityChart({ results }: EquityChartProps) {
+export default function EquityChart({ results, currency }: EquityChartProps) {
   const chartData = React.useMemo(() => {
     if (!results) return [];
 
@@ -47,10 +49,10 @@ export default function EquityChart({ results }: EquityChartProps) {
                 stroke="var(--text-primary)"
                 tickLine={false}
                 domain={['auto', 'auto']}
-                tickFormatter={(tick) => `$${tick.toLocaleString()}`}
+                tickFormatter={(tick) => formatCurrency(tick, currency, { maximumFractionDigits: 0 })}
               />
               <Tooltip
-                itemSorter={(item) => -item.value}
+                itemSorter={(item) => -(Number(item.value) || 0)}
                 labelFormatter={(unixTime) =>
                   new Date(unixTime).toLocaleDateString(undefined, {
                     year: 'numeric',
@@ -58,9 +60,9 @@ export default function EquityChart({ results }: EquityChartProps) {
                     day: 'numeric',
                   })
                 }
-                formatter={(value: any, name: string) => [
-                  `$${parseFloat(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
-                  name,
+                formatter={(value, name) => [
+                  formatCurrency(Number(value ?? 0), currency, { maximumFractionDigits: 0 }),
+                  String(name ?? ''),
                 ]}
                 contentStyle={{
                   backgroundColor: 'var(--bg-input)',
@@ -70,7 +72,7 @@ export default function EquityChart({ results }: EquityChartProps) {
                 }}
               />
               <Legend
-                itemSorter={(item: any) => {
+                itemSorter={(item) => {
                   const label = item.value;
                   if (label === 'Strategy Equity') return 1;
                   if (label === 'Buy & Hold') return 2;

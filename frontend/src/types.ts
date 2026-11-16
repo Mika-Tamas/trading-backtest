@@ -36,6 +36,8 @@ export interface BacktestResponse {
     metrics: BacktestMetrics;
 }
 
+export type StrategyType = 'SMA';
+
 export interface BacktestRequest {
     ticker: string;
     risk_free_ticker: string;
@@ -45,13 +47,15 @@ export interface BacktestRequest {
     end_date: string;
     initial_cash: number;
     base_currency: string;
-    strategy_name: string;
+    strategy_name: StrategyType;
     strategy_params: number[];
     fee_model: FeeSettings;
 }
 
+export type FeeType = 'Percentage' | 'ShareFlat' | 'OrderFlat';
+
 export interface FeeSettings {
-    type: string;
+    type: FeeType;
     rate: number;
     min: number;
     max: number;

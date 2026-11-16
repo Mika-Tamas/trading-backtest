@@ -43,6 +43,21 @@ if(MINGW)
 endif()
 
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../.venv/Scripts/python.exe")
+    set(STUBGEN_PYTHON "${CMAKE_CURRENT_SOURCE_DIR}/../.venv/Scripts/python.exe")
+elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../.venv/bin/python")
+    set(STUBGEN_PYTHON "${CMAKE_CURRENT_SOURCE_DIR}/../.venv/bin/python")
+else()
+    set(STUBGEN_PYTHON "${Python_EXECUTABLE}")
+endif()
+
+add_custom_command(TARGET backtest_core POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=$<TARGET_FILE_DIR:backtest_core>"
+        "${STUBGEN_PYTHON}" -m pybind11_stubgen backtest_core -o "$<TARGET_FILE_DIR:backtest_core>"
+    COMMENT "Generating Python type stubs for backtest_core"
+)
+
+
 
 set(CMAKE_TLS_VERIFY OFF)
 include(FetchContent)

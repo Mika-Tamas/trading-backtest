@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   DollarSign,
   Euro,
@@ -16,6 +16,7 @@ import {
   Moon,
   BarChart3,
   AlertCircle,
+  List,
 } from 'lucide-react';
 import type { BacktestResponse, BacktestRequest, FeeType, StrategyType } from './types';
 import { formatCurrency } from './utils/currency';
@@ -29,9 +30,12 @@ import {
 import EquityChart from './components/EquityChart/EquityChart';
 import MetricCard, { type MetricTone, type MetricVariant } from './components/MetricCard/MetricCard';
 import SidebarConfig from './components/SidebarConfig/SidebarConfig';
+import TradesPanel from './components/TradesPanel/TradesPanel';
 import './App.css';
 
 type ThemeMode = 'light' | 'dark';
+
+const TRADES_DOCKED_QUERY = '(min-width: 1440px)';
 
 function getInitialTheme(): ThemeMode {
   try {
@@ -100,6 +104,7 @@ export default function App() {
   const [results, setResults] = useState<BacktestResponse | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [tradesOpen, setTradesOpen] = useState<boolean>(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -109,6 +114,26 @@ export default function App() {
       // Ignore storage errors
     }
   }, [theme]);
+
+  useEffect(() => {
+    const mql = window.matchMedia(TRADES_DOCKED_QUERY);
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (e.matches) setTradesOpen(false);
+    };
+    mql.addEventListener('change', handleChange);
+    return () => mql.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!tradesOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [tradesOpen]);
+
+  const closeTrades = useCallback(() => setTradesOpen(false), []);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
@@ -334,6 +359,19 @@ export default function App() {
 
             <button
               type="button"
+              className="theme-toggle trades-toggle"
+              onClick={() => setTradesOpen(true)}
+              aria-label="Open trade log"
+              aria-controls="trades-panel"
+              aria-expanded={tradesOpen}
+            >
+              <List size={15} />
+              <span className="trades-toggle-label">Trades</span>
+              {results && <span className="trades-toggle-count">{results.trades.length}</span>}
+            </button>
+
+            <button
+              type="button"
               className="theme-toggle"
               onClick={toggleTheme}
               aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
@@ -407,6 +445,13 @@ export default function App() {
             </div>
           </section>
         </main>
+
+        <TradesPanel
+          trades={results ? results.trades : null}
+          currency={resultCurrency}
+          isOpen={tradesOpen}
+          onClose={closeTrades}
+        />
       </div>
     </>
   );

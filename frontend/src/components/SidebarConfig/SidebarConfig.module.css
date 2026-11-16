@@ -98,21 +98,24 @@
     align-items: center;
     justify-content: space-between;
     gap: 6px;
+    min-height: 20px;
     margin-bottom: 5px;
 }
 
-.inputGroup label {
+.inputGroup > label,
+.labelRow > label:first-child {
     font-family: var(--font-sans);
     color: var(--text-secondary);
     font-size: 0.75rem;
     font-weight: 500;
+    line-height: 20px;
     margin-bottom: 5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.labelRow label {
+.labelRow > label:first-child {
     margin-bottom: 0;
 }
 
@@ -120,17 +123,20 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    font-family: var(--font-sans);
     font-size: 0.7rem;
     font-weight: 500;
+    line-height: 1.2;
     color: var(--text-muted);
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
-    padding: 1px 6px;
+    padding: 2px 6px;
     border-radius: var(--radius-sm);
     background-color: var(--bg-subtle);
     border: 1px solid var(--border-color);
     transition: border-color 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
 }
 
 .inlineCheckbox:hover {
@@ -141,15 +147,18 @@
 .inlineCheckbox input {
     margin: 0;
     width: auto;
+    height: auto;
+    padding: 0;
     accent-color: var(--accent-primary);
     cursor: pointer;
 }
 
-.inputGroup input,
-.inputGroup select {
+.inputGroup > input,
+.inputGroup > select {
     width: 100%;
     min-width: 0;
     height: 36px;
+    margin-top: auto;
     background-color: var(--bg-input);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
@@ -165,18 +174,18 @@
     font-variant-numeric: tabular-nums;
 }
 
-.inputGroup input:hover:not(:disabled),
-.inputGroup select:hover:not(:disabled) {
+.inputGroup > input:hover:not(:disabled),
+.inputGroup > select:hover:not(:disabled) {
     border-color: var(--border-strong);
 }
 
-.inputGroup input:focus,
-.inputGroup select:focus {
+.inputGroup > input:focus,
+.inputGroup > select:focus {
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 3px var(--accent-primary-soft);
 }
 
-.inputGroup input:disabled {
+.inputGroup > input:disabled {
     background-color: var(--bg-disabled);
     color: var(--text-muted);
     opacity: 0.75;

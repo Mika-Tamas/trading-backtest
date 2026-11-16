@@ -18,7 +18,7 @@
 }
 
 .variantCompact {
-    padding: 13px 15px;
+    padding: 12px 12px;
     gap: 8px;
 }
 
@@ -43,8 +43,13 @@
     text-overflow: ellipsis;
 }
 
+.variantCompact .metricCardHeader {
+    gap: 6px;
+}
+
 .variantCompact .metricCardHeader h3 {
-    font-size: 0.74rem;
+    font-size: 0.72rem;
+    letter-spacing: 0;
 }
 
 .iconBadge {
@@ -60,8 +65,8 @@
 }
 
 .variantCompact .iconBadge {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: var(--radius-sm);
 }
 

@@ -11,16 +11,27 @@ private:
 
 public:
   CircularBuffer(int max_capacity)
-      : size(0), head(-1), items(max_capacity), capacity(max_capacity) {}
+      : size(0), head(-1), items(max_capacity > 0 ? max_capacity : 0),
+        capacity(max_capacity > 0 ? max_capacity : 0) {}
 
   ~CircularBuffer() = default;
   std::vector<T> get_all_items() const { return items; }
   int get_size() const { return size; }
-  T get_oldest() const { return get_prev(size - 1); }
-  T get_newest() const { return get_prev(0); }
+  T get_oldest() const {
+    if (size == 0) {
+      return T{};
+    }
+    return get_prev(size - 1);
+  }
+  T get_newest() const {
+    if (size == 0) {
+      return T{};
+    }
+    return get_prev(0);
+  }
   T get_prev(int offset) const {
 
-    if (offset >= size) {
+    if (offset < 0 || offset >= size) {
       return T{};
     }
 
@@ -32,6 +43,9 @@ public:
     return items[index];
   }
   void push(T elem) {
+    if (capacity <= 0) {
+      return;
+    }
     head++;
     if (head >= capacity)
       head = 0;

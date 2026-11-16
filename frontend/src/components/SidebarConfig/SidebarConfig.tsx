@@ -51,7 +51,7 @@ export default function SidebarConfig({
             <h2>Configuration</h2>
             <form onSubmit={executeBacktest}>
                 <div className={styles.inputGroup}>
-                    <label htmlFor="ticker">Ticker Symbol</label>
+                    <label htmlFor="ticker">Ticker</label>
                     <input
                         id="ticker"
                         type="text"

@@ -1,5 +1,5 @@
 export interface Trade {
-    symbol: string;
+    ticker: string;
     entry_time: number;
     exit_time: number;
     entry_price: number;

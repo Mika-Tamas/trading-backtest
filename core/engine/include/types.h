@@ -4,7 +4,7 @@
 #include <string>
 
 struct Bar {
-  std::string symbol;
+  std::string ticker;
   std::int64_t timestamp;
   double open;
   double high;
@@ -14,7 +14,7 @@ struct Bar {
 };
 
 struct Order {
-  std::string symbol;
+  std::string ticker;
   std::int64_t timestamp;
   int quantity;
   double price;
@@ -22,7 +22,7 @@ struct Order {
 };
 
 struct Trade {
-  std::string symbol;
+  std::string ticker;
   std::int64_t entry_time;
   std::int64_t exit_time;
   double entry_price;
@@ -34,7 +34,7 @@ struct Trade {
 };
 
 struct Position {
-  std::string symbol;
+  std::string ticker;
   int quantity;
   double average_entry_price;
   std::int64_t entry_time;

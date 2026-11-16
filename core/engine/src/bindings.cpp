@@ -20,7 +20,7 @@ PYBIND11_MODULE(backtest_core, m) {
 
   // structs
   py::class_<Trade>(m, "Trade")
-      .def_readwrite("symbol", &Trade::symbol)
+      .def_readwrite("ticker", &Trade::ticker)
       .def_readwrite("entry_time", &Trade::entry_time)
       .def_readwrite("exit_time", &Trade::exit_time)
       .def_readwrite("entry_price", &Trade::entry_price)
@@ -30,7 +30,7 @@ PYBIND11_MODULE(backtest_core, m) {
       .def_readwrite("realized_pnl", &Trade::realized_pnl)
       .def_readwrite("fee_paid", &Trade::fee_paid);
   py::class_<Position>(m, "Position")
-      .def_readwrite("symbol", &Position::symbol)
+      .def_readwrite("ticker", &Position::ticker)
       .def_readwrite("quantity", &Position::quantity)
       .def_readwrite("average_entry_price", &Position::average_entry_price)
       .def_readwrite("entry_time", &Position::entry_time)
@@ -38,7 +38,7 @@ PYBIND11_MODULE(backtest_core, m) {
   py::class_<Bar>(m, "Bar")
       .def(py::init<std::string, std::int64_t, double, double, double, double,
                     double>())
-      .def_readwrite("symbol", &Bar::symbol)
+      .def_readwrite("ticker", &Bar::ticker)
       .def_readwrite("timestamp", &Bar::timestamp)
       .def_readwrite("open", &Bar::open)
       .def_readwrite("high", &Bar::high)

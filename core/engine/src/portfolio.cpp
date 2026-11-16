@@ -16,13 +16,13 @@ void Portfolio::execute_order(const Order &order) {
   cash -= total_cost * order.side;
   cash -= current_order_fee;
   auto it = current_positions.find(
-      order.symbol); // std::unordered_map<std::string, Position>::iterator it
+      order.ticker); // std::unordered_map<std::string, Position>::iterator it
 
   // Case 1: New position
   if (it == current_positions.end()) {
-    Position p = {order.symbol, order.quantity * order.side, order.price,
+    Position p = {order.ticker, order.quantity * order.side, order.price,
                   order.timestamp, current_order_fee};
-    current_positions[order.symbol] = p;
+    current_positions[order.ticker] = p;
   } else {
     Position &p = it->second;
 
@@ -44,7 +44,7 @@ void Portfolio::execute_order(const Order &order) {
                          (static_cast<double>(closed_qty) / order.quantity);
 
       Trade trade = {
-          order.symbol,          p.entry_time, order.timestamp,
+          order.ticker,          p.entry_time, order.timestamp,
           p.average_entry_price, order.price,  closed_qty,
           position_side,         pnl,          entry_fee_portion + close_fee};
       trade_history.push_back(trade);
@@ -101,8 +101,8 @@ int Portfolio::get_max_quantity(double cash_available, double price) const {
   return fee_structure->quantity_from_cash(cash_available, price);
 }
 
-int Portfolio::get_position_quantity(const std::string &symbol) const {
-  auto it = current_positions.find(symbol);
+int Portfolio::get_position_quantity(const std::string &ticker) const {
+  auto it = current_positions.find(ticker);
   if (it != current_positions.end()) {
     return it->second.quantity;
   } else {

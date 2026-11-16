@@ -78,7 +78,7 @@ class Orchestrator:
         )
 
         trades_struct = [TradeResponse(
-            symbol=t.symbol,
+            ticker=t.ticker,
             entry_time=int(t.entry_time),
             exit_time=int(t.exit_time),
             entry_price=t.entry_price,

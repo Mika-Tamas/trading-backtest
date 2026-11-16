@@ -28,5 +28,5 @@ public:
   const std::vector<Trade> &get_trade_history() const;
   const std::unordered_map<std::string, Position> &get_positions() const;
   int get_max_quantity(double cash_available, double price) const;
-  int get_position_quantity(const std::string &symbol) const;
+  int get_position_quantity(const std::string &ticker) const;
 };

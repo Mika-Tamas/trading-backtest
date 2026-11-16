@@ -20,7 +20,7 @@ class BacktestRequest(BaseModel):
     fee_model : FeeSettings
 
 class TradeResponse(BaseModel):
-    symbol: str
+    ticker: str
     entry_time: int
     exit_time: int
     entry_price: float

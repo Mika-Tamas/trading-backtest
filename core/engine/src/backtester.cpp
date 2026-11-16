@@ -35,7 +35,7 @@ void Backtester::run(const std::vector<Bar> &bar_curve) {
   for (; index < bar_curve.size(); index++) {
     Bar bar = bar_curve[index];
 
-    current_prices[bar.symbol] = bar.close;
+    current_prices[bar.ticker] = bar.close;
     auto orders = strategy->on_bar(bar, portfolio);
     for (Order order : orders) {
       portfolio.execute_order(order);

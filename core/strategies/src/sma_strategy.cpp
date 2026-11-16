@@ -19,11 +19,11 @@ std::vector<Order> SMAStrategy::on_bar(const Bar &bar,
                                         const Portfolio &portfolio) {
   std::vector<Order> orders_to_execute;
   // multiple tickers support
-  if (ticker_states.find(bar.symbol) == ticker_states.end()) {
-    ticker_states[bar.symbol] =
+  if (ticker_states.find(bar.ticker) == ticker_states.end()) {
+    ticker_states[bar.ticker] =
         std::make_unique<TickerHistory>(slow_period, fast_period);
   }
-  TickerHistory &ticker_history = *ticker_states[bar.symbol];
+  TickerHistory &ticker_history = *ticker_states[bar.ticker];
   ticker_history.consume_price(bar.close);
 
   if (bar.timestamp < warmup_over_timestamp) {
@@ -41,7 +41,7 @@ std::vector<Order> SMAStrategy::on_bar(const Bar &bar,
 
   double price = bar.close;
   std::int64_t timestamp = bar.timestamp;
-  std::string ticker = bar.symbol;
+  std::string ticker = bar.ticker;
 
   if (prev_fast_sma <= prev_slow_sma && fast_sma > slow_sma) {
     int order_qty = get_unified_order_qty(portfolio, ticker, price, 1);

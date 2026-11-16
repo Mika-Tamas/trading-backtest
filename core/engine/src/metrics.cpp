@@ -72,6 +72,8 @@ double Metrics::get_average_daily_return(
 }
 double Metrics::get_standard_deviation(
     const std::vector<double> &daily_percentage_returns, double avg_return) {
+  if (daily_percentage_returns.empty())
+    return 0.0;
   double sum_squared_deviation = 0.0;
   for (double ret : daily_percentage_returns) {
     double deviation = ret - avg_return;
@@ -80,7 +82,7 @@ double Metrics::get_standard_deviation(
   double standard_variance =
       sum_squared_deviation / daily_percentage_returns.size();
 
-  if (standard_variance == 0.0)
+  if (standard_variance <= 0.0)
     return 0.0;
 
   double standard_dev = std::sqrt(standard_variance);
@@ -88,6 +90,8 @@ double Metrics::get_standard_deviation(
 }
 double Metrics::get_downside_deviation(
     const std::vector<double> &daily_percentage_returns, double target_return) {
+  if (daily_percentage_returns.empty())
+    return 0.0;
   double sum_squared_downside = 0.0;
   for (double ret : daily_percentage_returns) {
     double downside = std::min(0.0, ret - target_return);
@@ -96,7 +100,7 @@ double Metrics::get_downside_deviation(
   double downside_variance =
       sum_squared_downside / daily_percentage_returns.size();
 
-  if (downside_variance == 0.0)
+  if (downside_variance <= 0.0)
     return 0.0;
 
   double downside_dev = std::sqrt(downside_variance);
@@ -110,27 +114,46 @@ double Metrics::calculate_maximum_drawdown() {
   double peak = equity_curve[0];
   double max_dd = 0.0;
 
-  for (int i = 1; i < equity_curve.size(); ++i) {
-    double drop = (peak - equity_curve[i]) / peak;
+  for (size_t i = 1; i < equity_curve.size(); ++i) {
     if (equity_curve[i] > peak) {
       peak = equity_curve[i];
-    } else if (drop > max_dd) {
-      max_dd = drop;
+    } else if (peak > 0.0) {
+      double drop = (peak - equity_curve[i]) / peak;
+      if (drop > max_dd) {
+        max_dd = drop;
+      }
     }
   }
 
-  return max_dd * 100;
+  return max_dd * 100.0;
 }
 
 double Metrics::calculate_beta() {
+  size_t n = std::min(daily_percentage_returns.size(),
+                      benchmark_daily_percentage_returns.size());
+  if (n == 0)
+    return 0.0;
+
+  double strat_mean = average_daily_strategy_return;
+  double bench_mean = average_daily_benchmark_return;
+  if (n != daily_percentage_returns.size() ||
+      n != benchmark_daily_percentage_returns.size()) {
+    double s_sum = 0.0;
+    double b_sum = 0.0;
+    for (size_t i = 0; i < n; ++i) {
+      s_sum += daily_percentage_returns[i];
+      b_sum += benchmark_daily_percentage_returns[i];
+    }
+    strat_mean = s_sum / n;
+    bench_mean = b_sum / n;
+  }
+
   double cov_sum = 0.0;
   double var_sum = 0.0;
 
-  for (size_t i = 0; i < daily_percentage_returns.size(); ++i) {
-    double diff_strat =
-        daily_percentage_returns[i] - average_daily_strategy_return;
-    double diff_bench =
-        benchmark_daily_percentage_returns[i] - average_daily_benchmark_return;
+  for (size_t i = 0; i < n; ++i) {
+    double diff_strat = daily_percentage_returns[i] - strat_mean;
+    double diff_bench = benchmark_daily_percentage_returns[i] - bench_mean;
 
     cov_sum += diff_strat * diff_bench;
     var_sum += diff_bench * diff_bench;
@@ -145,7 +168,7 @@ double Metrics::calculate_beta() {
 
 //-------------------------PUBLIC-----------------------------
 double Metrics::get_total_return() {
-  if (equity_curve.empty())
+  if (equity_curve.empty() || equity_curve.front() == 0.0)
     return 0.0;
   double total_return =
       (equity_curve.back() - equity_curve.front()) / equity_curve.front() * 100;
@@ -156,9 +179,11 @@ double Metrics::get_annualized_return() {
   // CAGR
   if (equity_curve.size() < 2)
     return 0.0;
-  if (equity_curve.front() == 0.0)
+  if (equity_curve.front() <= 0.0)
     return 0.0;
   double total_return = equity_curve.back() / equity_curve.front();
+  if (total_return <= 0.0)
+    return -100.0;
   double time_factor = 1.0 / (equity_curve.size() / YEARLY_TRADING_DAYS);
 
   double cagr = std::pow(total_return, time_factor) - 1.0;
@@ -198,14 +223,22 @@ double Metrics::get_sortino_ratio() {
 }
 
 double Metrics::get_information_ratio() {
-  std::vector<double> diff(daily_percentage_returns.size());
+  size_t n = std::min(daily_percentage_returns.size(),
+                      benchmark_daily_percentage_returns.size());
+  if (n == 0)
+    return 0.0;
 
-  for (int i = 0; i < daily_percentage_returns.size(); ++i) {
+  std::vector<double> diff(n);
+  double diff_sum = 0.0;
+  for (size_t i = 0; i < n; ++i) {
     diff[i] =
         daily_percentage_returns[i] - benchmark_daily_percentage_returns[i];
+    diff_sum += diff[i];
   }
-  double mean = average_daily_strategy_return - average_daily_benchmark_return;
+  double mean = diff_sum / n;
   double daily_tracking_error = get_standard_deviation(diff, mean);
+  if (daily_tracking_error == 0.0)
+    return 0.0;
   double daily_IR = mean / daily_tracking_error;
   double annualized_IR = daily_IR * std::sqrt(YEARLY_TRADING_DAYS);
 
@@ -262,6 +295,8 @@ double Metrics::get_win_rate() {
 double Metrics::get_beta() { return beta; }
 
 double Metrics::get_alpha() {
+  if (daily_percentage_returns.empty())
+    return 0.0;
   double annualized_strategy_return =
       average_daily_strategy_return * YEARLY_TRADING_DAYS;
   double annualized_risk_free_return =

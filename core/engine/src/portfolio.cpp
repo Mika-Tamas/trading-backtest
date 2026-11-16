@@ -7,16 +7,30 @@ Portfolio::Portfolio(std::shared_ptr<FeeStructure> fee_structure,
       fee_structure(fee_structure) {}
 
 void Portfolio::execute_order(const Order &order) {
+  if (order.quantity <= 0 || order.price <= 0.0 ||
+      (order.side != 1 && order.side != -1)) {
+    return;
+  }
 
   double total_cost = order.price * order.quantity;
 
   double current_order_fee =
-      fee_structure->calculate_fee(order.price, order.quantity);
+      fee_structure ? fee_structure->calculate_fee(order.price, order.quantity)
+                    : 0.0;
+
+  auto it = current_positions.find(order.ticker);
+
+  if (order.side > 0) {
+    bool is_pure_short_cover =
+        (it != current_positions.end() && it->second.quantity < 0 &&
+         order.quantity <= std::abs(it->second.quantity));
+    if (!is_pure_short_cover && cash + 1e-9 < total_cost + current_order_fee) {
+      return;
+    }
+  }
 
   cash -= total_cost * order.side;
   cash -= current_order_fee;
-  auto it = current_positions.find(
-      order.ticker); // std::unordered_map<std::string, Position>::iterator it
 
   // Case 1: New position
   if (it == current_positions.end()) {
@@ -55,9 +69,10 @@ void Portfolio::execute_order(const Order &order) {
         p.quantity = remaining_order_qty * order.side;
         p.average_entry_price = order.price;
         p.entry_time = order.timestamp;
-        p.fee_paid = current_order_fee - close_fee - entry_fee_portion;
+        p.fee_paid = current_order_fee - close_fee;
       } else {
         p.quantity += order.quantity * order.side;
+        p.fee_paid -= entry_fee_portion;
         if (p.quantity == 0) {
           current_positions.erase(it);
         }

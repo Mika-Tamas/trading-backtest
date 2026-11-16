@@ -8,12 +8,14 @@ Backtester::Backtester(double initial_cash, std::shared_ptr<Strategy> strategy,
       warmup_over_timestamp(warmup_over_timestamp) {}
 
 void Backtester::run(const std::vector<Bar> &bar_curve) {
+  equity_curve.clear();
+  timestamps.clear();
 
   if (bar_curve.empty())
     return;
 
   // warmup data
-  int index = 0;
+  size_t index = 0;
   while (index < bar_curve.size() &&
          bar_curve[index].timestamp < warmup_over_timestamp) {
     strategy->on_bar(bar_curve[index], portfolio);
@@ -24,7 +26,6 @@ void Backtester::run(const std::vector<Bar> &bar_curve) {
     return;
 
   double initial_cash = portfolio.get_cash();
-  double first_price = bar_curve[0].close;
 
   std::unordered_map<std::string, double> current_prices;
 
@@ -45,7 +46,8 @@ void Backtester::run(const std::vector<Bar> &bar_curve) {
   }
 
   // Liquidate when over
-  for (auto position : portfolio.get_positions()) {
+  auto positions_to_close = portfolio.get_positions();
+  for (const auto &position : positions_to_close) {
     int side_to_close = (position.second.quantity > 0) ? -1 : 1;
     portfolio.execute_order({position.first, timestamps.back(),
                              std::abs(position.second.quantity),

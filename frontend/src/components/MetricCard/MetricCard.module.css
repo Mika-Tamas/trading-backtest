@@ -1,41 +1,123 @@
 .metricsCard {
     background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 20px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
     display: flex;
-    flex: 1;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 100px;
-    max-height: 100px;
-    min-width: 150px;
-    max-width: 225px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: 10px;
+    min-width: 0;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease;
 }
 
 .metricsCard:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow);
+}
+
+.variantCompact {
+    padding: 13px 15px;
+    gap: 8px;
 }
 
 .metricCardHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     width: 100%;
 }
 
 .metricCardHeader h3 {
-    color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    font-size: 0.78rem;
     font-weight: 500;
     margin: 0;
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.variantCompact .metricCardHeader h3 {
+    font-size: 0.74rem;
+}
+
+.iconBadge {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.variantCompact .iconBadge {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+}
+
+.iconBadge svg {
+    width: 14px;
+    height: 14px;
+}
+
+.variantCompact .iconBadge svg {
+    width: 13px;
+    height: 13px;
+}
+
+.toneNeutral .iconBadge {
+    background-color: var(--tone-neutral-bg);
+    color: var(--tone-neutral-text);
+    border-color: var(--tone-neutral-border);
+}
+
+.toneAccent .iconBadge {
+    background-color: var(--tone-accent-bg);
+    color: var(--tone-accent-text);
+    border-color: var(--tone-accent-border);
+}
+
+.tonePositive .iconBadge {
+    background-color: var(--tone-positive-bg);
+    color: var(--tone-positive-text);
+    border-color: var(--tone-positive-border);
+}
+
+.toneNegative .iconBadge {
+    background-color: var(--tone-negative-bg);
+    color: var(--tone-negative-text);
+    border-color: var(--tone-negative-border);
 }
 
 .metricsValue {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-top: 12px;
-    margin-bottom: 0;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.45rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.variantCompact .metricsValue {
+    font-size: 1.15rem;
+}
+
+.tonePositive .valueToned {
+    color: var(--tone-positive-text);
+}
+
+.toneNegative .valueToned {
+    color: var(--tone-negative-text);
 }

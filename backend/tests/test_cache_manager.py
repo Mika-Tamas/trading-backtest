@@ -1,117 +1,129 @@
-import pytest
-import os
 import json
-from datetime import datetime, date, timedelta
-from unittest.mock import patch, mock_open
+import os
+from datetime import date, datetime, timedelta
 import polars as pl
+import pytest
 from cache_manager import CacheManager
 
-@pytest.fixture
-def mock_config():
-    with patch("builtins.open", mock_open(read_data='{"paths": {"stored_tickers": "./mock_data/"}}')):
-        yield
 
 @pytest.fixture
-def cache_manager(mock_config):
-    return CacheManager()
+def cache_dir(tmp_path):
+    return tmp_path / "cache"
 
-def test_init_creates_directory(mock_config):
-    with patch("os.makedirs") as mock_makedirs:
-        cm = CacheManager()
-        mock_makedirs.assert_called_once_with("./mock_data/", exist_ok=True)
 
-def test_ticker_path(cache_manager):
-    assert cache_manager.ticker_path("AAPL") == "./mock_data/AAPL.csv"
+@pytest.fixture
+def cache_manager(cache_dir):
+    return CacheManager(
+        storage_path=str(cache_dir),
+        metadata_file=str(cache_dir / "cache_metadata.json"),
+    )
 
-def test_from_local_cache_not_exists(cache_manager):
-    with patch("os.path.exists", return_value=False):
-        df, start, end = cache_manager.from_local_cache("AAPL")
-        assert df is None
-        assert start is None
-        assert end is None
 
-def test_from_local_cache_exists(cache_manager):
-    mock_df = pl.DataFrame({
-        "Date": [date(2023, 1, 1), date(2023, 1, 2)],
-        "Close": [100.0, 101.0]
+def test_init_creates_storage_directory(cache_dir):
+    assert not cache_dir.exists()
+    cm = CacheManager(
+        storage_path=str(cache_dir),
+        metadata_file=str(cache_dir / "cache_metadata.json"),
+    )
+    assert cache_dir.is_dir()
+    assert cm.ticker_path("AAPL") == os.path.join(str(cache_dir), "AAPL.csv")
+
+
+def test_from_local_cache_missing_file(cache_manager):
+    df, start, end = cache_manager.from_local_cache("MISSING")
+    assert df is None
+    assert start is None
+    assert end is None
+
+
+def test_save_and_load_round_trip_with_metadata(cache_manager):
+    sample = pl.DataFrame({
+        "Date": [date(2023, 1, 2), date(2023, 1, 3), date(2023, 1, 4)],
+        "Close": [100.0, 102.5, 101.0],
     })
-    
-    with patch("os.path.exists", return_value=True), \
-         patch("polars.read_csv", return_value=mock_df), \
-         patch.object(cache_manager, "get_cache_bounds", return_value=(date(2023, 1, 1), date(2023, 1, 2))):
-        
-        df, start, end = cache_manager.from_local_cache("AAPL")
-        
-        assert df is not None
-        assert len(df) == 2
-        assert start == date(2023, 1, 1)
-        assert end == date(2023, 1, 2)
+    cache_manager.save_to_csv("AAPL", sample)
+    cache_manager.update_cache_metadata("AAPL", start=date(2023, 1, 1), end=date(2023, 1, 5))
 
-def test_from_local_cache_exists_no_metadata(cache_manager):
-    mock_df = pl.DataFrame({
-        "Date": [date(2023, 1, 1), date(2023, 1, 5)],
-        "Close": [100.0, 101.0]
+    loaded, start, end = cache_manager.from_local_cache("AAPL")
+    assert loaded is not None
+    assert len(loaded) == 3
+    assert loaded["Close"].to_list() == [100.0, 102.5, 101.0]
+    assert start == date(2023, 1, 1)
+    assert end == date(2023, 1, 5)
+
+
+def test_from_local_cache_falls_back_to_csv_bounds_when_metadata_missing(cache_manager):
+    sample = pl.DataFrame({
+        "Date": [date(2023, 2, 1), date(2023, 2, 10)],
+        "Close": [150.0, 155.0],
     })
-    
-    with patch("os.path.exists", return_value=True), \
-         patch("polars.read_csv", return_value=mock_df), \
-         patch.object(cache_manager, "get_cache_bounds", return_value=(None, None)):
-        
-        df, start, end = cache_manager.from_local_cache("AAPL")
-        
-        assert start == date(2023, 1, 1)
-        assert end == date(2023, 1, 5)
+    cache_manager.save_to_csv("MSFT", sample)
 
-def test_update_cache_metadata_new(cache_manager):
-    m_open = mock_open()
-    with patch("builtins.open", m_open):
-        with patch("os.path.exists", return_value=False):
-            m_open.side_effect = [FileNotFoundError, m_open.return_value]
-            cache_manager.update_cache_metadata("AAPL", start=date(2023,1,1), end=date(2023,1,10))
-            
-            m_open.assert_called_with("./mock_data/cache_metadata.json", "w")
-            
-            handle = m_open.return_value
-            written = "".join(call.args[0] for call in handle.write.call_args_list)
-            data = json.loads(written)
-            assert "AAPL" in data
-            assert data["AAPL"]["start"] == "2023-01-01"
-            assert data["AAPL"]["end"] == "2023-01-10"
-            assert "last_accessed" in data["AAPL"]
+    loaded, start, end = cache_manager.from_local_cache("MSFT")
+    assert loaded is not None
+    assert start == date(2023, 2, 1)
+    assert end == date(2023, 2, 10)
 
-def test_remove_cached_ticker(cache_manager):
-    mock_metadata = {"AAPL": {"start": "2023-01-01"}, "MSFT": {"start": "2023-01-01"}}
-    m_open = mock_open(read_data=json.dumps(mock_metadata))
-    
-    with patch("os.path.exists", return_value=True), \
-         patch("os.remove") as mock_remove, \
-         patch("builtins.open", m_open):
-        
-        cache_manager.remove_cached_ticker("AAPL")
-        
-        mock_remove.assert_called_once_with("./mock_data/AAPL.csv")
-        
-        handle = m_open()
-        write_calls = [c.args[0] for c in handle.write.call_args_list if c.args]
-        if write_calls:
-            written = "".join(write_calls)
-            data = json.loads(written)
-            assert "AAPL" not in data
-            assert "MSFT" in data
 
-def test_enforce_cache_lifecycle(cache_manager):
-    old_date = (datetime.now() - timedelta(days=40)).isoformat()
-    new_date = (datetime.now() - timedelta(days=10)).isoformat()
-    
-    mock_metadata = {
-        "OLD_TICKER": {"last_accessed": old_date},
-        "NEW_TICKER": {"last_accessed": new_date}
+def test_from_local_cache_handles_corrupted_csv_and_missing_date_column(cache_manager, cache_dir):
+    (cache_dir / "EMPTY.csv").write_text("", encoding="utf-8")
+    assert cache_manager.from_local_cache("EMPTY") == (None, None, None)
+
+    (cache_dir / "BADDATE.csv").write_text("Date,Close\nnot-a-date,100.0\n", encoding="utf-8")
+    assert cache_manager.from_local_cache("BADDATE") == (None, None, None)
+
+    (cache_dir / "NODATE.csv").write_text("Ticker,Close\nAAPL,100.0\n", encoding="utf-8")
+    assert cache_manager.from_local_cache("NODATE") == (None, None, None)
+
+
+def test_corrupted_metadata_json_recovery(cache_manager, cache_dir):
+    meta_path = cache_dir / "cache_metadata.json"
+    meta_path.write_text("{corrupted json!!!", encoding="utf-8")
+
+    assert cache_manager.get_cache_bounds("AAPL") == (None, None)
+
+    cache_manager.update_cache_metadata("AAPL", start=date(2023, 1, 1), end=date(2023, 1, 10))
+    recovered = json.loads(meta_path.read_text(encoding="utf-8"))
+    assert recovered["AAPL"]["start"] == "2023-01-01"
+    assert recovered["AAPL"]["end"] == "2023-01-10"
+    assert "last_accessed" in recovered["AAPL"]
+
+
+def test_remove_cached_ticker_deletes_csv_and_metadata(cache_manager, cache_dir):
+    df = pl.DataFrame({"Date": [date(2023, 1, 1)], "Close": [100.0]})
+    cache_manager.save_to_csv("AAPL", df)
+    cache_manager.save_to_csv("MSFT", df)
+    cache_manager.update_cache_metadata("AAPL", start=date(2023, 1, 1), end=date(2023, 1, 2))
+    cache_manager.update_cache_metadata("MSFT", start=date(2023, 1, 1), end=date(2023, 1, 2))
+
+    cache_manager.remove_cached_ticker("AAPL")
+
+    assert not (cache_dir / "AAPL.csv").exists()
+    assert (cache_dir / "MSFT.csv").exists()
+    metadata = json.loads((cache_dir / "cache_metadata.json").read_text(encoding="utf-8"))
+    assert "AAPL" not in metadata
+    assert "MSFT" in metadata
+
+
+def test_enforce_cache_lifecycle_evicts_expired_and_corrupted_entries(cache_manager, cache_dir):
+    df = pl.DataFrame({"Date": [date(2023, 1, 1)], "Close": [100.0]})
+    for sym in ("EXPIRED", "FRESH", "CORRUPT_TS"):
+        cache_manager.save_to_csv(sym, df)
+
+    old_ts = (datetime.now() - timedelta(days=45)).isoformat()
+    fresh_ts = (datetime.now() - timedelta(days=5)).isoformat()
+
+    metadata = {
+        "EXPIRED": {"start": "2023-01-01", "end": "2023-01-02", "last_accessed": old_ts},
+        "FRESH": {"start": "2023-01-01", "end": "2023-01-02", "last_accessed": fresh_ts},
+        "CORRUPT_TS": {"start": "2023-01-01", "end": "2023-01-02", "last_accessed": "bad-timestamp"},
     }
-    
-    with patch("os.path.exists", return_value=True), \
-         patch("builtins.open", mock_open(read_data=json.dumps(mock_metadata))), \
-         patch.object(cache_manager, "remove_cached_ticker") as mock_remove:
-        
-        cache_manager.enforce_cache_lifecycle()
-        
-        mock_remove.assert_called_once_with("OLD_TICKER")
+    (cache_dir / "cache_metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+
+    cache_manager.enforce_cache_lifecycle()
+
+    assert not (cache_dir / "EXPIRED.csv").exists()
+    assert not (cache_dir / "CORRUPT_TS.csv").exists()
+    assert (cache_dir / "FRESH.csv").exists()
+    remaining = json.loads((cache_dir / "cache_metadata.json").read_text(encoding="utf-8"))
+    assert list(remaining.keys()) == ["FRESH"]

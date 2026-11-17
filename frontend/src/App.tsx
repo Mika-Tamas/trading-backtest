@@ -173,7 +173,12 @@ export default function App() {
         strategy_params: buildStrategyParams(strategyName, strategyParams),
         fee_model: buildFeeSettings(feeType, feeRate, minFee, maxFee),
       };
-      const response = await fetch('http://127.0.0.1:8000/backtest', {
+
+      const apiBase =
+        import.meta.env.VITE_API_URL ??
+        (import.meta.env.DEV ? 'http://127.0.0.1:8000' : '');
+
+      const response = await fetch(`${apiBase}/backtest`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -283,9 +288,9 @@ export default function App() {
       label: 'Total Fees',
       value: results
         ? formatCurrency(results.fees_paid, resultCurrency, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
         : '—',
       icon: <Receipt />,
       tone: 'neutral',

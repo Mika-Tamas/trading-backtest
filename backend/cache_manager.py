@@ -44,7 +44,8 @@ class CacheManager:
             data = pl.read_csv(path)
             if data.is_empty() or "Date" not in data.columns:
                 return None, None, None
-            data = data.with_columns(pl.col("Date").cast(pl.Date))
+            if data.schema["Date"] != pl.Date:
+                data = data.with_columns(pl.col("Date").str.to_date("%Y-%m-%d"))
             if data["Date"].null_count() > 0:
                 return None, None, None
 

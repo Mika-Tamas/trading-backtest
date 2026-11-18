@@ -74,6 +74,7 @@ public:
   std::vector<Order> on_bar(const Bar &bar,
                             const Portfolio &portfolio) override;
   int get_warmup_days() const override;
+  void reset() override;
   int get_unified_order_qty(const Portfolio &portfolio, std::string &ticker,
                             double price, int direction) const;
 };

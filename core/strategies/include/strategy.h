@@ -12,4 +12,5 @@ public:
   virtual std::vector<Order> on_bar(const Bar &bar,
                                     const Portfolio &portfolio) = 0;
   virtual int get_warmup_days() const = 0;
+  virtual void reset() {}
 };

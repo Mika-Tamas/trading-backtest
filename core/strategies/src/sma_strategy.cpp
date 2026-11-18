@@ -64,6 +64,8 @@ std::vector<Order> SMAStrategy::on_bar(const Bar &bar,
 
 int SMAStrategy::get_warmup_days() const { return slow_period; }
 
+void SMAStrategy::reset() { ticker_states.clear(); }
+
 int SMAStrategy::get_unified_order_qty(const Portfolio &portfolio,
                                         std::string &ticker, double price,
                                         int direction) const {

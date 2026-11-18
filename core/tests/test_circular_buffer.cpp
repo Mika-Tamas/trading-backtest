@@ -1,5 +1,6 @@
 #include "circular_buffer.hpp"
 #include <gtest/gtest.h>
+#include <vector>
 
 TEST(CircularBufferTest, Initialization) {
   CircularBuffer<int> cb(5);
@@ -14,6 +15,7 @@ TEST(CircularBufferTest, PushAndGet) {
   EXPECT_EQ(cb.get_size(), 2);
   EXPECT_EQ(cb.get_newest(), 20);
   EXPECT_EQ(cb.get_oldest(), 10);
+  EXPECT_EQ(cb.get_all_items(), std::vector<int>({10, 20}));
 }
 
 TEST(CircularBufferTest, WrapAround) {
@@ -30,6 +32,7 @@ TEST(CircularBufferTest, WrapAround) {
   EXPECT_EQ(cb.get_prev(0), 4);
   EXPECT_EQ(cb.get_prev(1), 3);
   EXPECT_EQ(cb.get_prev(2), 2);
+  EXPECT_EQ(cb.get_all_items(), std::vector<int>({2, 3, 4}));
 }
 
 TEST(CircularBufferTest, PrevOutOfBounds) {

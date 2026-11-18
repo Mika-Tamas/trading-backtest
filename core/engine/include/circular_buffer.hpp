@@ -15,7 +15,14 @@ public:
         capacity(max_capacity > 0 ? max_capacity : 0) {}
 
   ~CircularBuffer() = default;
-  std::vector<T> get_all_items() const { return items; }
+  std::vector<T> get_all_items() const {
+    std::vector<T> result;
+    result.reserve(size);
+    for (int offset = size - 1; offset >= 0; --offset) {
+      result.push_back(get_prev(offset));
+    }
+    return result;
+  }
   int get_size() const { return size; }
   T get_oldest() const {
     if (size == 0) {

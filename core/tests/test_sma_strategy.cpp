@@ -1,3 +1,4 @@
+#include "backtester.h"
 #include "order_flat_fee.h"
 #include "percentage_fee.h"
 #include "portfolio.h"
@@ -218,4 +219,26 @@ TEST(SMAStrategyTest, MultiCycleReversalsWithPercentageAndShareFees) {
     ASSERT_EQ(buy2_count, 1);
     EXPECT_GT(portfolio.get_position_quantity("AAPL"), 0);
   }
+}
+
+TEST(SMAStrategyTest,
+     ReusedStrategyInstanceProducesIdenticalOrdersAcrossBacktesterRuns) {
+  auto fee = std::make_shared<OrderFlatFee>(0.0);
+  auto strat = std::make_shared<SMAStrategy>(1, 4, 2);
+
+  std::vector<Bar> bars = {
+      make_bar("AAPL", 1, 100.0), make_bar("AAPL", 2, 100.0),
+      make_bar("AAPL", 3, 100.0), make_bar("AAPL", 4, 100.0),
+      make_bar("AAPL", 5, 120.0), make_bar("AAPL", 6, 120.0),
+  };
+
+  Backtester bt1(10000.0, strat, 1, fee);
+  bt1.run(bars);
+
+  Backtester bt2(10000.0, strat, 1, fee);
+  bt2.run(bars);
+
+  EXPECT_EQ(bt1.get_equity_curve(), bt2.get_equity_curve());
+  EXPECT_EQ(bt1.get_portfolio().get_trade_history().size(),
+            bt2.get_portfolio().get_trade_history().size());
 }

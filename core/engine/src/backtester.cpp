@@ -11,6 +11,10 @@ void Backtester::run(const std::vector<Bar> &bar_curve) {
   equity_curve.clear();
   timestamps.clear();
 
+  if (strategy) {
+    strategy->reset();
+  }
+
   if (bar_curve.empty())
     return;
 

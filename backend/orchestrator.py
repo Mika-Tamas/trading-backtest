@@ -3,7 +3,7 @@ from series_formatter import SeriesFormatter
 from schemas import BacktestRequest, BacktestMetrics, TradeResponse, BacktestResponse, FeeSettings
 import sys
 import os
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -20,7 +20,7 @@ class Orchestrator:
     def execute(self,req : BacktestRequest):
 
         #init strategy
-        warmup_over_timestamp = int(datetime.fromisoformat(req.start_date).timestamp())
+        warmup_over_timestamp = int(datetime.fromisoformat(req.start_date).replace(tzinfo=timezone.utc).timestamp())
         strategy_type = self.parse_strategy(req.strategy_name)
         int_args = [int(arg) for arg in req.strategy_params]
         strategy_instance = strategy_type(warmup_over_timestamp,*int_args)
@@ -48,7 +48,7 @@ class Orchestrator:
         trade_history = portfolio.get_trade_history()
         
         #get curves for benchmark    
-        risk_free_data = self.data_provider.load_ticker_with_fx(req.risk_free_ticker,req.start_date,req.end_date,req.base_currency)
+        risk_free_data = self.data_provider.load_ticker(req.risk_free_ticker, req.start_date, req.end_date)
         market_data = self.data_provider.load_ticker_with_fx(req.market_ticker,req.start_date,req.end_date,req.base_currency)
         if req.visual_comparison_ticker == req.ticker:
             comparison_data = df

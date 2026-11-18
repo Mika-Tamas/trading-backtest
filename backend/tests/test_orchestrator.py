@@ -86,14 +86,18 @@ def test_execute_end_to_end_cpp_binding_invocation(orchestrator, fee_model):
         fee_model=fee_model,
     )
 
-    def mock_load(ticker, start_date, end_date, currency):
+    def mock_load_ticker(ticker, start_date, end_date):
         if ticker == "^IRX":
             return rf_df
+        raise AssertionError(f"Unexpected load_ticker call for {ticker}")
+
+    def mock_load(ticker, start_date, end_date, currency):
         if ticker == "SPY":
             return market_df
         return asset_df
 
-    with patch.object(orchestrator.data_provider, "load_ticker_with_fx", side_effect=mock_load):
+    with patch.object(orchestrator.data_provider, "load_ticker", side_effect=mock_load_ticker), \
+         patch.object(orchestrator.data_provider, "load_ticker_with_fx", side_effect=mock_load):
         res = orchestrator.execute(req)
 
     assert isinstance(res, BacktestResponse)
@@ -108,3 +112,45 @@ def test_execute_end_to_end_cpp_binding_invocation(orchestrator, fee_model):
     assert res.final_cash == pytest.approx(res.initial_cash + total_pnl - res.fees_paid, abs=1e-6)
 
     json.dumps(res.model_dump(), allow_nan=False)
+
+
+def test_execute_non_usd_base_currency_does_not_scale_risk_free_rate(orchestrator):
+    asset_prices = [
+        100.0, 100.0, 100.0, 100.0, 100.0, 100.0,
+        100.0, 100.0, 120.0, 130.0, 135.0, 140.0,
+        115.0, 100.0, 90.0, 85.0, 80.0,
+    ]
+    asset_df = _make_df(date(2023, 1, 4), asset_prices)
+    market_df = _make_df(date(2023, 1, 10), [400.0 + i * 2.0 for i in range(11)])
+    rf_df = _make_df(date(2023, 1, 10), [3.0] * 11)
+
+    req = BacktestRequest(
+        ticker="AAPL",
+        risk_free_ticker="^IRX",
+        market_ticker="SPY",
+        visual_comparison_ticker="AAPL",
+        start_date="2023-01-10",
+        end_date="2023-01-20",
+        initial_cash=1000000.0,
+        base_currency="HUF",
+        strategy_name="SMA",
+        strategy_params=[4.0, 2.0],
+        fee_model=FeeSettings(type="Percentage", rate=0.001, min=1.0, max=100.0),
+    )
+
+    def mock_load_ticker(ticker, start_date, end_date):
+        if ticker == "^IRX":
+            return rf_df
+        raise AssertionError(f"Unexpected load_ticker call for {ticker}")
+
+    def mock_load_ticker_with_fx(ticker, start_date, end_date, currency):
+        if ticker == "SPY":
+            return market_df
+        return asset_df
+
+    with patch.object(orchestrator.data_provider, "load_ticker", side_effect=mock_load_ticker) as spy_load_ticker, \
+         patch.object(orchestrator.data_provider, "load_ticker_with_fx", side_effect=mock_load_ticker_with_fx) as spy_load_fx:
+        orchestrator.execute(req)
+
+    assert any(call.args[0] == "^IRX" for call in spy_load_ticker.call_args_list)
+    assert all(call.args[0] != "^IRX" for call in spy_load_fx.call_args_list)

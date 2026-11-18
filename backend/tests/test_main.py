@@ -82,14 +82,18 @@ def test_run_backtest_end_to_end_with_real_engine():
     rf_df = _make_sample_df(date(2023, 1, 10), 15, [4.0] * 15)
     spy_df = _make_sample_df(date(2023, 1, 10), 15, [400.0 + i for i in range(15)])
 
-    def fake_load(ticker, start_date, end_date, currency):
+    def fake_load_ticker(ticker, start_date, end_date):
         if ticker == "^IRX":
             return rf_df
+        raise AssertionError(f"Unexpected load_ticker call for {ticker}")
+
+    def fake_load(ticker, start_date, end_date, currency):
         if ticker == "SPY":
             return spy_df
         return asset_df
 
-    with patch("orchestrator.DataProvider.load_ticker_with_fx", side_effect=fake_load):
+    with patch("orchestrator.DataProvider.load_ticker", side_effect=fake_load_ticker), \
+         patch("orchestrator.DataProvider.load_ticker_with_fx", side_effect=fake_load):
         response = client.post("/backtest", json=_valid_payload())
 
     assert response.status_code == 200

@@ -31,7 +31,27 @@ def test_convert_to_bar_curve_produces_real_cpp_bars(formatter):
     assert bars[0].low == 9.0
     assert bars[0].close == 11.0
     assert bars[0].volume == 100.0
-    assert bars[0].timestamp == int(datetime(2023, 1, 1).timestamp())
+    assert bars[0].timestamp == int(datetime(2023, 1, 1, tzinfo=timezone.utc).timestamp())
+
+
+def test_convert_to_bar_curve_and_align_curves_roundtrip_exact_dates(formatter):
+    df = pl.DataFrame({
+        "Date": [date(2023, 6, 1), date(2023, 6, 2), date(2023, 6, 5)],
+        "Open": [100.0, 200.0, 300.0],
+        "High": [101.0, 201.0, 301.0],
+        "Low": [99.0, 199.0, 299.0],
+        "Close": [100.0, 200.0, 300.0],
+        "Volume": [1000.0, 1000.0, 1000.0],
+    })
+
+    bars = formatter.convert_to_bar_curve("AAPL", df)
+    ts = [b.timestamp for b in bars]
+
+    price_curve = formatter.get_price_curve(df, ts)
+    norm_curve = formatter.build_normalized_curve(1000.0, df, ts)
+
+    assert price_curve == [100.0, 200.0, 300.0]
+    assert norm_curve == [1000.0, 2000.0, 3000.0]
 
 
 def test_convert_to_bar_curve_rejects_nan_or_null_ohlcv(formatter):

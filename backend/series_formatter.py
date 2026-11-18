@@ -1,6 +1,6 @@
 import math
 import polars as pl
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import os
 import sys
 
@@ -42,11 +42,14 @@ class SeriesFormatter:
             if date_val is None:
                 raise ValueError("Bar row contains null Date.")
             if isinstance(date_val, datetime):
-                timestamp = int(date_val.timestamp())
+                dt = date_val.replace(tzinfo=timezone.utc) if date_val.tzinfo is None else date_val
+                timestamp = int(dt.timestamp())
             elif isinstance(date_val, date):
-                timestamp = int(datetime.combine(date_val, datetime.min.time()).timestamp())
+                timestamp = int(datetime.combine(date_val, datetime.min.time(), tzinfo=timezone.utc).timestamp())
             else:  # str
-                timestamp = int(datetime.fromisoformat(str(date_val)).timestamp())
+                dt = datetime.fromisoformat(str(date_val))
+                dt = dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+                timestamp = int(dt.timestamp())
 
             ohlcv = []
             for col in ("Open", "High", "Low", "Close", "Volume"):

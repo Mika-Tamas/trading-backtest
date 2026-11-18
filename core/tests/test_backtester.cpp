@@ -198,3 +198,27 @@ TEST(BacktesterTest, FeeDeductionAccuracyAcrossMultipleTrades) {
                    10000.0 + total_pnl - total_fees);
   EXPECT_DOUBLE_EQ(bt.get_equity_curve().back(), 10000.0 + 450.0 - 12.0);
 }
+
+TEST(BacktesterTest, MultiReversalIntegrationWithNonZeroFees) {
+  auto fee = std::make_shared<PercentageFee>(0.005, 1.0, 50.0);
+  auto strat = std::make_shared<SMAStrategy>(1, 4, 2);
+
+  std::vector<Bar> bars;
+  for (int t = 1; t <= 4; ++t) {
+    bars.push_back(make_bar("AAPL", t, 10.0));
+  }
+  for (int t = 5; t <= 7; ++t) {
+    bars.push_back(make_bar("AAPL", t, 12.0));
+  }
+  for (int t = 8; t <= 11; ++t) {
+    bars.push_back(make_bar("AAPL", t, 8.0));
+  }
+  for (int t = 12; t <= 15; ++t) {
+    bars.push_back(make_bar("AAPL", t, 13.0));
+  }
+
+  Backtester bt(10000.0, strat, 1, fee);
+  bt.run(bars);
+
+  EXPECT_GE(bt.get_portfolio().get_trade_history().size(), 3u);
+}

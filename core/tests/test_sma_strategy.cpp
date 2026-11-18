@@ -1,10 +1,14 @@
 #include "order_flat_fee.h"
+#include "percentage_fee.h"
 #include "portfolio.h"
+#include "share_flat_fee.h"
 #include "sma_strategy.h"
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
 #include <numeric>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -156,4 +160,62 @@ TEST(SMAStrategyTest, LongStreamKahanSummationMatchesNaiveReference) {
     }
   }
   EXPECT_GT(crossover_count, 20);
+}
+
+TEST(SMAStrategyTest, MultiCycleReversalsWithPercentageAndShareFees) {
+  const std::vector<std::pair<std::string, std::shared_ptr<FeeStructure>>> fees = {
+      {"PercentageFee", std::make_shared<PercentageFee>(0.01, 1.0, 50.0)},
+      {"ShareFlatFee", std::make_shared<ShareFlatFee>(0.05, 1.0, 50.0)},
+  };
+
+  for (const auto &[name, fee] : fees) {
+    SCOPED_TRACE(name);
+    Portfolio portfolio(fee, 10000.0);
+    SMAStrategy strat(1, 4, 2);
+
+    // Warmup (t=1..4)
+    for (int t = 1; t <= 4; ++t) {
+      EXPECT_TRUE(
+          strat.on_bar(make_bar("AAPL", t, 10.0), portfolio).empty());
+    }
+
+    // Golden Cross #1 (t=5..7)
+    int buy1_count = 0;
+    for (int t = 5; t <= 7; ++t) {
+      auto orders = strat.on_bar(make_bar("AAPL", t, 12.0), portfolio);
+      for (const auto &o : orders) {
+        EXPECT_EQ(o.side, 1);
+        portfolio.execute_order(o);
+        buy1_count++;
+      }
+    }
+    ASSERT_EQ(buy1_count, 1);
+    EXPECT_GT(portfolio.get_position_quantity("AAPL"), 0);
+
+    // Death Cross #1 (t=8..11)
+    int sell1_count = 0;
+    for (int t = 8; t <= 11; ++t) {
+      auto orders = strat.on_bar(make_bar("AAPL", t, 8.0), portfolio);
+      for (const auto &o : orders) {
+        EXPECT_EQ(o.side, -1);
+        portfolio.execute_order(o);
+        sell1_count++;
+      }
+    }
+    ASSERT_EQ(sell1_count, 1);
+    EXPECT_LT(portfolio.get_position_quantity("AAPL"), 0);
+
+    // Golden Cross #2 (t=12..15): Short-to-Long reversal must not be rejected
+    int buy2_count = 0;
+    for (int t = 12; t <= 15; ++t) {
+      auto orders = strat.on_bar(make_bar("AAPL", t, 13.0), portfolio);
+      for (const auto &o : orders) {
+        EXPECT_EQ(o.side, 1);
+        portfolio.execute_order(o);
+        buy2_count++;
+      }
+    }
+    ASSERT_EQ(buy2_count, 1);
+    EXPECT_GT(portfolio.get_position_quantity("AAPL"), 0);
+  }
 }

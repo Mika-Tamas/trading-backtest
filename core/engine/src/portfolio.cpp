@@ -124,3 +124,7 @@ int Portfolio::get_position_quantity(const std::string &ticker) const {
     return 0;
   }
 }
+
+double Portfolio::get_fee_for_order(double price, int quantity) const {
+  return fee_structure ? fee_structure->calculate_fee(price, quantity) : 0.0;
+}

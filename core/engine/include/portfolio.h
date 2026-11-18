@@ -29,4 +29,5 @@ public:
   const std::unordered_map<std::string, Position> &get_positions() const;
   int get_max_quantity(double cash_available, double price) const;
   int get_position_quantity(const std::string &ticker) const;
+  double get_fee_for_order(double price, int quantity) const;
 };

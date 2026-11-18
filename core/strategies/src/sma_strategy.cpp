@@ -69,8 +69,16 @@ int SMAStrategy::get_unified_order_qty(const Portfolio &portfolio,
                                         int direction) const {
   int current_qty = portfolio.get_position_quantity(ticker);
   double projected_cash = portfolio.get_cash() + (current_qty * price);
-  int target_qty =
-      portfolio.get_max_quantity(projected_cash, price) * direction;
-  int order_qty = target_qty - current_qty;
-  return order_qty;
+  int abs_target = portfolio.get_max_quantity(projected_cash, price);
+
+  if (direction == 1 && current_qty < 0) {
+    while (abs_target > 0 &&
+           (abs_target - current_qty) * price +
+                   portfolio.get_fee_for_order(price, abs_target - current_qty) >
+               portfolio.get_cash() + 1e-9) {
+      abs_target--;
+    }
+  }
+
+  return (abs_target * direction) - current_qty;
 }

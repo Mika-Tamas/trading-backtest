@@ -66,11 +66,12 @@ def test_execute_end_to_end_cpp_binding_invocation(orchestrator, fee_model):
     asset_prices = [
         100.0, 100.0, 100.0, 100.0, 100.0, 100.0,  # warmup (Jan 4..9)
         100.0, 100.0, 120.0, 130.0, 135.0, 140.0,  # golden cross
-        115.0, 100.0, 90.0, 85.0, 80.0,            # death cross + liquidation
+        115.0, 100.0, 90.0, 85.0, 80.0,            # death cross
+        110.0, 130.0, 140.0, 150.0,                # second rally + liquidation
     ]
     asset_df = _make_df(date(2023, 1, 4), asset_prices)
-    market_df = _make_df(date(2023, 1, 10), [400.0 + i * 2.0 for i in range(11)])
-    rf_df = _make_df(date(2023, 1, 10), [3.0] * 11)
+    market_df = _make_df(date(2023, 1, 10), [400.0 + i * 2.0 for i in range(15)])
+    rf_df = _make_df(date(2023, 1, 10), [3.0] * 15)
 
     req = BacktestRequest(
         ticker="AAPL",
@@ -78,7 +79,7 @@ def test_execute_end_to_end_cpp_binding_invocation(orchestrator, fee_model):
         market_ticker="SPY",
         visual_comparison_ticker="AAPL",
         start_date="2023-01-10",
-        end_date="2023-01-20",
+        end_date="2023-01-24",
         initial_cash=10000.0,
         base_currency="USD",
         strategy_name="SMA",
@@ -105,7 +106,7 @@ def test_execute_end_to_end_cpp_binding_invocation(orchestrator, fee_model):
     assert len(res.timestamps) == len(res.equity_curve)
     assert len(res.timestamps) == len(res.market_curve)
     assert len(res.timestamps) == len(res.comparison_curve)
-    assert len(res.trades) >= 1
+    assert len(res.trades) >= 3
     assert res.fees_paid > 0.0
 
     total_pnl = sum(t.realized_pnl for t in res.trades)

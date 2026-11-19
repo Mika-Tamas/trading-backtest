@@ -49,7 +49,7 @@ Metrics::equity_to_percentage_returns(const std::vector<double> &equity_curve) {
 }
 
 double Metrics::get_average_daily_risk_free_return() {
-  double avg_rf = 0.001;
+  double avg_rf = 0.0;
   if (!risk_free_rate_curve.empty()) {
     double sum = 0.0;
     for (double r : risk_free_rate_curve)

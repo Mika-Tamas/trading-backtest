@@ -163,3 +163,14 @@ TEST(MetricsTest, MismatchedBenchmarkLengthAndZeroEquityBoundary) {
   EXPECT_DOUBLE_EQ(zero_start.get_total_return(), 0.0);
   EXPECT_DOUBLE_EQ(zero_start.get_annualized_return(), 0.0);
 }
+
+TEST(MetricsTest, EmptyRiskFreeCurveDefaultsToZeroRate) {
+  Metrics m_empty({100.0, 110.0, 105.0, 120.0}, {}, {100.0, 102.0, 101.0, 104.0},
+                  {});
+  Metrics m_zero({100.0, 110.0, 105.0, 120.0}, {}, {100.0, 102.0, 101.0, 104.0},
+                 {0.0, 0.0, 0.0, 0.0});
+
+  EXPECT_DOUBLE_EQ(m_empty.get_sharpe_ratio(), m_zero.get_sharpe_ratio());
+  EXPECT_DOUBLE_EQ(m_empty.get_sortino_ratio(), m_zero.get_sortino_ratio());
+  EXPECT_DOUBLE_EQ(m_empty.get_alpha(), m_zero.get_alpha());
+}

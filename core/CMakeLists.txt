@@ -59,7 +59,6 @@ add_custom_command(TARGET backtest_core POST_BUILD
 
 
 
-set(CMAKE_TLS_VERIFY OFF)
 include(FetchContent)
 FetchContent_Declare(
   googletest

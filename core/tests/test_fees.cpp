@@ -87,3 +87,16 @@ TEST(FeeEdgeCasesTest, HighFrequencySmallOrdersAndPolymorphicDispatch) {
   EXPECT_DOUBLE_EQ(models[1]->calculate_fee(1000.0, 100), 25.0);
   EXPECT_DOUBLE_EQ(models[2]->calculate_fee(100.0, 1000), 10.0);
 }
+
+TEST(FeeEdgeCasesTest, ClosedFormQuantityWithLargeMinFeeAndTinyPrice) {
+  PercentageFee pct(0.001, 500.0, 1000.0);
+  ShareFlatFee share(0.00001, 500.0, 1000.0);
+
+  EXPECT_EQ(pct.quantity_from_cash(1000.0, 0.0001), 5000000);
+  EXPECT_EQ(share.quantity_from_cash(1000.0, 0.0001), 5000000);
+
+  PercentageFee pct_capped(0.5, 1.0, 10.0);
+  ShareFlatFee share_capped(5.0, 1.0, 10.0);
+  EXPECT_EQ(pct_capped.quantity_from_cash(1000.0, 10.0), 99);
+  EXPECT_EQ(share_capped.quantity_from_cash(1000.0, 10.0), 99);
+}

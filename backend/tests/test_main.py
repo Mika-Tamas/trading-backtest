@@ -5,7 +5,8 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 from fastapi.testclient import TestClient
-from main import app
+from main import app, parse_cors_settings
+from schemas import BacktestRequest
 
 client = TestClient(app)
 
@@ -106,3 +107,71 @@ def test_run_backtest_end_to_end_with_real_engine():
     assert len(data["trades"]) >= 1
     assert data["fees_paid"] > 0.0
     json.dumps(data, allow_nan=False)
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["ticker", "risk_free_ticker", "market_ticker", "visual_comparison_ticker"],
+)
+@pytest.mark.parametrize(
+    "bad_ticker",
+    [
+        "../../target",
+        "..\\target",
+        "..",
+        ".",
+        "A..B",
+        ".AAPL",
+        "AAPL.",
+        "BRK/B",
+        "NASDAQ:AAPL",
+        "AAPL*",
+        "AAPL?",
+        "A" * 13,
+    ],
+)
+def test_run_backtest_rejects_unsafe_tickers_across_all_fields(field, bad_ticker):
+    payload = _valid_payload()
+    payload[field] = bad_ticker
+    response = client.post("/backtest", json=payload)
+    assert response.status_code == 422
+    assert "detail" in response.json()
+
+
+def test_backtest_request_normalizes_valid_tickers_to_uppercase():
+    payload = _valid_payload()
+    payload["ticker"] = " aapl "
+    payload["risk_free_ticker"] = "^irx"
+    payload["market_ticker"] = "brk.b"
+    payload["visual_comparison_ticker"] = "usdeur=x"
+
+    req = BacktestRequest(**payload)
+    assert req.ticker == "AAPL"
+    assert req.risk_free_ticker == "^IRX"
+    assert req.market_ticker == "BRK.B"
+    assert req.visual_comparison_ticker == "USDEUR=X"
+
+
+@pytest.mark.parametrize(
+    "raw,expected_origins,expected_credentials",
+    [
+        (None, ["*"], False),
+        ("*", ["*"], False),
+        (" , * , ", ["*"], False),
+        (" https://app.example.com , http://localhost:5173 , ", ["https://app.example.com", "http://localhost:5173"], True),
+        ("https://app.example.com, *", ["https://app.example.com", "*"], False),
+        ("", [], False),
+        (" , , ", [], False),
+    ],
+)
+def test_parse_cors_settings(raw, expected_origins, expected_credentials):
+    origins, allow_credentials = parse_cors_settings(raw)
+    assert origins == expected_origins
+    assert allow_credentials is expected_credentials
+
+
+def test_default_wildcard_cors_does_not_allow_credentials():
+    response = client.get("/health", headers={"Origin": "https://evil.example"})
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "*"
+    assert response.headers.get("access-control-allow-credentials") is None

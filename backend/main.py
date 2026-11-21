@@ -6,14 +6,22 @@ from fastapi.staticfiles import StaticFiles
 from orchestrator import Orchestrator
 from schemas import BacktestRequest
 
+def parse_cors_settings(raw_origins: str | None) -> tuple[list[str], bool]:
+    if raw_origins is None:
+        raw_origins = "*"
+    origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+    allow_credentials = bool(origins) and ("*" not in origins)
+    return origins, allow_credentials
+
+
 app = FastAPI()
 
-cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+cors_origins, cors_allow_credentials = parse_cors_settings(os.getenv("CORS_ORIGINS"))
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_credentials=cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )

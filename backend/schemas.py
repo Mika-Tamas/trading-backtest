@@ -1,7 +1,27 @@
 from datetime import date
 import math
+import re
 from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+MAX_TICKER_LENGTH = 12
+TICKER_PATTERN = re.compile(rf"^[A-Z0-9._^=-]{{1,{MAX_TICKER_LENGTH}}}$")
+
+
+def normalize_ticker(value: str) -> str:
+    """Validate and uppercase-normalize a market ticker symbol."""
+    if not isinstance(value, str):
+        raise ValueError("Ticker must be a string.")
+    normalized = value.strip().upper()
+    if not normalized:
+        raise ValueError("Ticker must not be empty or whitespace.")
+    if ".." in normalized or normalized.startswith(".") or normalized.endswith("."):
+        raise ValueError("Ticker contains an invalid dot sequence.")
+    if not TICKER_PATTERN.fullmatch(normalized):
+        raise ValueError(
+            f"Ticker must be 1-{MAX_TICKER_LENGTH} characters matching [A-Za-z0-9._^=-]."
+        )
+    return normalized
 
 
 class FeeSettings(BaseModel):
@@ -36,8 +56,12 @@ class BacktestRequest(BaseModel):
         "risk_free_ticker",
         "market_ticker",
         "visual_comparison_ticker",
-        "base_currency",
     )
+    @classmethod
+    def validate_ticker_fields(cls, v: str) -> str:
+        return normalize_ticker(v)
+
+    @field_validator("base_currency")
     @classmethod
     def strip_non_empty(cls, v: str) -> str:
         stripped = v.strip()

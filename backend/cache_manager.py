@@ -1,7 +1,20 @@
 from datetime import timedelta, datetime, date
-import polars as pl
 import json
 import os
+from pathlib import Path
+from urllib.parse import quote
+import polars as pl
+from schemas import normalize_ticker
+
+WINDOWS_RESERVED_NAMES = frozenset({
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    *(f"COM{i}" for i in range(10)),
+    *(f"LPT{i}" for i in range(10)),
+})
+
 
 class CacheManager:
     def __init__(self, storage_path: str | None = None, metadata_file: str | None = None):
@@ -21,10 +34,24 @@ class CacheManager:
 
         os.makedirs(storage_path, exist_ok=True)
         self.storage_path = storage_path
+        self.storage_root = Path(storage_path).resolve()
         self.metadata_path = metadata_file
 
+    @staticmethod
+    def _safe_cache_filename(ticker: str) -> str:
+        normalized = normalize_ticker(ticker)
+        encoded = quote(normalized, safe="._-")
+        stem = normalized.split(".", 1)[0]
+        if stem in WINDOWS_RESERVED_NAMES:
+            encoded = f"%{ord(encoded[0]):02X}{encoded[1:]}"
+        return f"{encoded}.csv"
+
     def ticker_path(self, ticker: str) -> str:
-        return os.path.join(self.storage_path, f"{ticker}.csv")
+        filename = self._safe_cache_filename(ticker)
+        resolved = (self.storage_root / filename).resolve()
+        if not resolved.is_relative_to(self.storage_root):
+            raise ValueError(f"Resolved cache path escapes storage root for ticker: {ticker!r}")
+        return str(resolved)
 
     def _load_metadata(self) -> dict:
         if not os.path.exists(self.metadata_path):
@@ -37,7 +64,8 @@ class CacheManager:
             return {}
 
     def from_local_cache(self, ticker: str) -> tuple[pl.DataFrame | None, date | None, date | None]:
-        path = self.ticker_path(ticker)
+        normalized = normalize_ticker(ticker)
+        path = self.ticker_path(normalized)
         if not os.path.exists(path):
             return None, None, None
         try:
@@ -49,7 +77,7 @@ class CacheManager:
             if data["Date"].null_count() > 0:
                 return None, None, None
 
-            start, end = self.get_cache_bounds(ticker)
+            start, end = self.get_cache_bounds(normalized)
 
             if start is None or end is None:
                 start = data["Date"].min()
@@ -60,22 +88,25 @@ class CacheManager:
             return None, None, None
 
     def save_to_csv(self, ticker: str, df: pl.DataFrame):
-        df.write_csv(self.ticker_path(ticker))
-        print(f"Data successfully saved to {self.ticker_path(ticker)}")
+        path = self.ticker_path(ticker)
+        df.write_csv(path)
+        print(f"Data successfully saved to {path}")
 
     def get_cache_bounds(self, ticker: str) -> tuple[date | None, date | None]:
+        normalized = normalize_ticker(ticker)
         try:
             metadata = self._load_metadata()
-            start = date.fromisoformat(metadata[ticker]["start"])
-            end = date.fromisoformat(metadata[ticker]["end"])
+            start = date.fromisoformat(metadata[normalized]["start"])
+            end = date.fromisoformat(metadata[normalized]["end"])
             return start, end
         except Exception:
             return None, None
 
     def update_cache_metadata(self, ticker, start=None, end=None):
+        normalized = normalize_ticker(ticker)
         cached = self._load_metadata()
 
-        ticker_data = cached.get(ticker, {})
+        ticker_data = cached.get(normalized, {})
         if not isinstance(ticker_data, dict):
             ticker_data = {}
         if start is not None:
@@ -85,24 +116,32 @@ class CacheManager:
 
         ticker_data["last_accessed"] = datetime.now().isoformat()
 
-        cached[ticker] = ticker_data
+        cached[normalized] = ticker_data
 
         with open(self.metadata_path, "w") as f:
             json.dump(cached, f, indent=4)
 
     def remove_cached_ticker(self, ticker):
-        path = self.ticker_path(ticker)
+        normalized = normalize_ticker(ticker)
+        path = self.ticker_path(normalized)
         if os.path.exists(path):
             os.remove(path)
 
         cached = self._load_metadata()
 
-        if ticker in cached:
-            cached.pop(ticker)
+        if normalized in cached:
+            cached.pop(normalized)
             with open(self.metadata_path, "w") as f:
                 json.dump(cached, f, indent=4)
         else:
-            print(f"{ticker} didn't have metadata.")
+            print(f"{normalized} didn't have metadata.")
+
+    def _drop_invalid_metadata_key(self, raw_key: str):
+        cached = self._load_metadata()
+        if raw_key in cached:
+            cached.pop(raw_key)
+            with open(self.metadata_path, "w") as f:
+                json.dump(cached, f, indent=4)
 
     def enforce_cache_lifecycle(self, cutoff_date=None):
         if cutoff_date is None:
@@ -113,7 +152,13 @@ class CacheManager:
             try:
                 last_accessed = datetime.fromisoformat(data["last_accessed"])
             except (KeyError, TypeError, ValueError):
-                self.remove_cached_ticker(ticker)
+                try:
+                    self.remove_cached_ticker(ticker)
+                except ValueError:
+                    self._drop_invalid_metadata_key(ticker)
                 continue
             if last_accessed < cutoff_date:
-                self.remove_cached_ticker(ticker)
+                try:
+                    self.remove_cached_ticker(ticker)
+                except ValueError:
+                    self._drop_invalid_metadata_key(ticker)

@@ -13,9 +13,13 @@ from build import backtest_core
 class Orchestrator:
     BUFFER_SCALE = 1.5
 
-    def __init__(self):
-        self.data_provider = DataProvider()
-        self.formatter = SeriesFormatter()
+    def __init__(
+        self,
+        data_provider: DataProvider | None = None,
+        formatter: SeriesFormatter | None = None,
+    ):
+        self.data_provider = data_provider if data_provider is not None else DataProvider()
+        self.formatter = formatter if formatter is not None else SeriesFormatter()
 
     def execute(self,req : BacktestRequest):
 

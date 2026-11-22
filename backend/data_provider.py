@@ -1,13 +1,15 @@
+from datetime import date, datetime
 import pandas as pd
-from cache_manager import CacheManager
 import polars as pl
 import yfinance as yf
-from datetime import datetime, date
+
+from cache_manager import CacheManager, create_cache_manager
+from schemas import normalize_ticker
 
 
 class DataProvider:
     def __init__(self, cache: CacheManager | None = None):
-        self.cache = cache if cache is not None else CacheManager()
+        self.cache: CacheManager = cache if cache is not None else create_cache_manager()
 
     @staticmethod
     def _pandas_to_polars(pandas_df: pd.DataFrame | None, ticker: str) -> pl.DataFrame:
@@ -35,7 +37,8 @@ class DataProvider:
 
         return data
 
-    def load_ticker(self, ticker, start_date, end_date) -> pl.DataFrame:
+    def load_ticker(self, ticker: str, start_date: str, end_date: str) -> pl.DataFrame:
+        normalized_ticker = normalize_ticker(ticker)
 
         try:
             start_dt = datetime.fromisoformat(start_date).date()
@@ -48,99 +51,149 @@ class DataProvider:
             raise ValueError("End date cannot be in the future.")
 
         use_cache = False
-        cached_df, cached_start, cached_end = self.cache.from_local_cache(ticker)
-        if cached_df is not None:
+        try:
+            cached_start, cached_end = self.cache.get_cache_bounds(normalized_ticker)
+        except Exception as e:
+            print(f"Error reading cache metadata for {normalized_ticker}: {e}\nFalling back to full download.")
+            cached_start, cached_end = None, None
+
+        if cached_start is not None and cached_end is not None:
             try:
-                dfs_to_concat = []
+                if not self.cache.has_bars(normalized_ticker):
+                    raise RuntimeError(f"Metadata exists for {normalized_ticker} but no cached bars found.")
+
+                new_slices: list[pl.DataFrame] = []
+                updated_start = cached_start
+                updated_end = cached_end
 
                 # Past data missing
                 if cached_start > start_dt:
-                    left_df = yf.download(ticker, start=start_date, end=cached_start)
+                    left_df = yf.download(normalized_ticker, start=start_date, end=cached_start)
                     if left_df is not None and not left_df.empty:
-                        left_pl = self._pandas_to_polars(left_df, ticker)
-                        dfs_to_concat.append(left_pl)
-                        cached_start = start_dt
-
-                # Present data
-                dfs_to_concat.append(cached_df)
+                        left_pl = self._pandas_to_polars(left_df, normalized_ticker)
+                        new_slices.append(left_pl)
+                        updated_start = start_dt
 
                 # Future data missing
                 if cached_end < end_dt:
-                    right_df = yf.download(ticker, start=cached_end, end=end_date)
+                    right_df = yf.download(normalized_ticker, start=cached_end, end=end_date)
                     if right_df is not None and not right_df.empty:
-                        right_pl = self._pandas_to_polars(right_df, ticker)
-                        dfs_to_concat.append(right_pl)
-                        cached_end = end_dt
+                        right_pl = self._pandas_to_polars(right_df, normalized_ticker)
+                        new_slices.append(right_pl)
+                        updated_end = end_dt
 
-                if len(dfs_to_concat) > 1:
-                    print(f"Updating cache for {ticker}...")
-                    data = pl.concat(dfs_to_concat)
-                    data = data.unique(subset=["Date"]).sort("Date")
-                    self.cache.save_to_csv(ticker, data)
-                    self.cache.update_cache_metadata(ticker, start=cached_start, end=cached_end)
-                else:
+                cached_df = self.cache.get_bars(
+                    normalized_ticker,
+                    start_date=start_dt,
+                    end_date=end_dt,
+                )
+
+                if new_slices:
+                    print(f"Updating cache for {normalized_ticker}...")
+                    combined_new = (
+                        pl.concat(new_slices, how="diagonal_relaxed")
+                        .unique(subset=["Date"])
+                        .sort("Date")
+                    )
+                    self.cache.save_bars(normalized_ticker, combined_new)
+                    self.cache.update_cache_metadata(
+                        normalized_ticker,
+                        start=updated_start,
+                        end=updated_end,
+                    )
+
+                    parts = [df for df in (cached_df, combined_new) if df is not None and not df.is_empty()]
+                    data = (
+                        pl.concat(parts, how="diagonal_relaxed")
+                        .unique(subset=["Date"])
+                        .sort("Date")
+                    )
+                elif cached_df is not None and not cached_df.is_empty():
                     data = cached_df
-                    self.cache.update_cache_metadata(ticker)
+                    self.cache.update_cache_metadata(normalized_ticker)
+                else:
+                    data = None
 
-                print(f"Loading {ticker} from local cache...")
-                data = data.filter((pl.col("Date") >= start_dt) & (pl.col("Date") <= end_dt))
-                use_cache = True
+                if data is not None and not data.is_empty():
+                    print(f"Loading {normalized_ticker} from cache...")
+                    data = data.filter((pl.col("Date") >= start_dt) & (pl.col("Date") <= end_dt))
+                    if not data.is_empty():
+                        use_cache = True
 
             except Exception as e:
                 use_cache = False
                 print(f"Error while handling cache: {e}\nFalling back to full download.")
 
         if not use_cache:
-            pandas_df = yf.download(ticker, start=start_date, end=end_date)
-            data = self._pandas_to_polars(pandas_df, ticker)
+            pandas_df = yf.download(normalized_ticker, start=start_date, end=end_date)
+            data = self._pandas_to_polars(pandas_df, normalized_ticker)
 
-            print(f"Creating cache for ticker {ticker}")
-            self.cache.save_to_csv(ticker, data)
-            self.cache.update_cache_metadata(ticker, start=start_date, end=end_date)
+            print(f"Creating cache for ticker {normalized_ticker}")
+            try:
+                self.cache.save_bars(normalized_ticker, data)
+                self.cache.update_cache_metadata(
+                    normalized_ticker,
+                    start=start_dt,
+                    end=end_dt,
+                )
+            except Exception as e:
+                print(f"Warning: failed to save cache for {normalized_ticker}: {e}")
 
-        self.cache.enforce_cache_lifecycle()
+        try:
+            self.cache.enforce_cache_lifecycle()
+        except Exception as e:
+            print(f"Warning: cache lifecycle enforcement failed: {e}")
+
         return data
 
-    def load_ticker_with_fx(self,ticker,start_date,end_date, currency):
+    def load_ticker_with_fx(self, ticker: str, start_date: str, end_date: str, currency: str) -> pl.DataFrame:
         df = self.load_ticker(ticker, start_date, end_date)
         ticker_native_currency = self.get_ticker_currency(ticker)
-        if (ticker_native_currency != None):
-            if ticker_native_currency == currency:
-                pass
-            else:
+        if ticker_native_currency is not None:
+            if ticker_native_currency != currency:
                 exchange_rate_ticker = f"{ticker_native_currency}{currency}=X"
-                fx_df = self.load_ticker(exchange_rate_ticker,start_date,end_date)
+                fx_df = self.load_ticker(exchange_rate_ticker, start_date, end_date)
                 fx_df = fx_df.rename({"Close": "FX_Rate"})
                 print(f"Converting {ticker} from {ticker_native_currency} to {currency}...")
 
-                df = df.join(fx_df.select(["Date","FX_Rate"]), on="Date", how="left")
+                df = df.join(fx_df.select(["Date", "FX_Rate"]), on="Date", how="left")
                 df = df.with_columns(pl.col("FX_Rate").forward_fill().backward_fill())
                 df = df.with_columns([
                     (pl.col("Open") * pl.col("FX_Rate")).alias("Open"),
                     (pl.col("High") * pl.col("FX_Rate")).alias("High"),
                     (pl.col("Low") * pl.col("FX_Rate")).alias("Low"),
-                    (pl.col("Close") * pl.col("FX_Rate")).alias("Close"),])
+                    (pl.col("Close") * pl.col("FX_Rate")).alias("Close"),
+                ])
                 df = df.drop("FX_Rate")
         else:
             print(f"Warning: yfinance did not return currency for {ticker}. Skipping FX conversion...")
 
         return df
-   
-    def get_ticker_currency(self, ticker) -> str | None:
+
+    def get_ticker_currency(self, ticker: str) -> str | None:
+        normalized_ticker = normalize_ticker(ticker)
+
         try:
-            ticker_info = yf.Ticker(ticker).info
+            cached_currency = self.cache.get_cached_currency(normalized_ticker)
+            if cached_currency is not None:
+                return cached_currency
+        except Exception as e:
+            print(f"Warning: failed to read cached currency for {normalized_ticker}: {e}")
+
+        try:
+            ticker_info = yf.Ticker(normalized_ticker).info
             if not isinstance(ticker_info, dict):
                 return None
-            return ticker_info.get("currency", None)
+            raw_currency = ticker_info.get("currency", None)
         except Exception:
             return None
 
+        if isinstance(raw_currency, str) and raw_currency.strip():
+            currency = raw_currency.strip()
+            try:
+                self.cache.update_cache_metadata(normalized_ticker, currency=currency)
+            except Exception as e:
+                print(f"Warning: failed to cache currency for {normalized_ticker}: {e}")
+            return currency
 
-
-
-
-
-
-
-
-
+        return None

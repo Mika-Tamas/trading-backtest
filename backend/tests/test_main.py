@@ -5,7 +5,10 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 from fastapi.testclient import TestClient
-from main import app, parse_cors_settings
+from cache_manager import LocalCacheManager, MongoCacheManager
+import main as main_module
+from main import app, get_orchestrator, parse_cors_settings
+from orchestrator import Orchestrator
 from schemas import BacktestRequest
 
 client = TestClient(app)
@@ -175,3 +178,63 @@ def test_default_wildcard_cors_does_not_allow_credentials():
     assert response.status_code == 200
     assert response.headers.get("access-control-allow-origin") == "*"
     assert response.headers.get("access-control-allow-credentials") is None
+
+
+@pytest.mark.parametrize(
+    "backend_name,expected_cls",
+    [
+        ("local", LocalCacheManager),
+        ("mongo", MongoCacheManager),
+    ],
+)
+def test_lifespan_shares_single_orchestrator_and_cache_across_requests(
+    monkeypatch, backend_name, expected_cls
+):
+    monkeypatch.setenv("CACHE_BACKEND", backend_name)
+    if hasattr(app.state, "orchestrator"):
+        delattr(app.state, "orchestrator")
+
+    seen_orchestrators: list[Orchestrator] = []
+    seen_caches: list[object] = []
+
+    def fake_execute(self, req):
+        seen_orchestrators.append(self)
+        seen_caches.append(self.data_provider.cache)
+        return {"ok": True}
+
+    with patch.object(Orchestrator, "execute", fake_execute), \
+         patch.object(main_module, "close_cached_clients") as mock_close:
+        with TestClient(app) as managed_client:
+            orch_on_state = app.state.orchestrator
+            assert isinstance(orch_on_state.data_provider.cache, expected_cls)
+
+            r1 = managed_client.post("/backtest", json=_valid_payload())
+            r2 = managed_client.post("/backtest", json=_valid_payload())
+            assert r1.status_code == 200
+            assert r2.status_code == 200
+
+        mock_close.assert_called_once()
+
+    assert len(seen_orchestrators) == 2
+    assert seen_orchestrators[0] is seen_orchestrators[1] is orch_on_state
+    assert seen_caches[0] is seen_caches[1] is orch_on_state.data_provider.cache
+    assert not hasattr(app.state, "orchestrator")
+
+
+def test_dependency_override_replaces_orchestrator():
+    called_with = []
+
+    class StubOrchestrator:
+        def execute(self, req):
+            called_with.append(req.ticker)
+            return {"stubbed": True}
+
+    stub = StubOrchestrator()
+    app.dependency_overrides[get_orchestrator] = lambda: stub
+    try:
+        response = client.post("/backtest", json=_valid_payload())
+        assert response.status_code == 200
+        assert response.json() == {"stubbed": True}
+        assert called_with == ["AAPL"]
+    finally:
+        app.dependency_overrides.pop(get_orchestrator, None)
